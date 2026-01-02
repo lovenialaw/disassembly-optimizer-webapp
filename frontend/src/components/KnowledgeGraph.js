@@ -6,18 +6,18 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
   const graphRef = useRef();
   const [hoveredNode, setHoveredNode] = useState(null);
 
-  // Neo4j-style node color function
+  // Clean color scheme
   const getNodeColor = (node) => {
     if (optimizationResult && optimizationResult.sequence && optimizationResult.sequence.includes(node.id)) {
-      return '#FF6B6B'; // Neo4j red for optimized path
+      return '#E74C3C'; // Red for optimized path
     }
     if (selectedParts && selectedParts.includes(node.id)) {
-      return '#4ECDC4'; // Neo4j teal for selected
+      return '#3498DB'; // Blue for selected
     }
     if (hoveredNode && hoveredNode.id === node.id) {
-      return '#95E1D3'; // Light teal for hover
+      return '#5DADE2'; // Light blue for hover
     }
-    return '#68A7AD'; // Neo4j blue-gray for default
+    return '#95A5A6'; // Gray for default
   };
 
   // Handle engine stop with safe ref check
@@ -49,7 +49,7 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
   };
 
   return (
-    <div className="knowledge-graph neo4j-style">
+    <div className="knowledge-graph">
       <ForceGraph2D
         ref={graphRef}
         graphData={transformedData}
@@ -64,69 +64,32 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           }
           
           const label = node.name || node.id;
-          const fontSize = Math.max(10, 12 / Math.sqrt(globalScale));
-          const nodeRadius = 24;
+          const fontSize = Math.max(11, 13 / Math.sqrt(globalScale));
+          const nodeRadius = 22;
           const isSelected = selectedParts && selectedParts.includes(node.id);
           const isInPath = optimizationResult && optimizationResult.sequence && optimizationResult.sequence.includes(node.id);
           const isHovered = hoveredNode && hoveredNode.id === node.id;
           
-          // Draw outer glow for selected/hovered nodes
-          if (isSelected || isInPath || isHovered) {
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, nodeRadius + 3, 0, 2 * Math.PI, false);
-            ctx.fillStyle = getNodeColor(node) + '40'; // 40 = 25% opacity
-            ctx.fill();
-          }
-          
-          // Draw main circle with Neo4j style
+          // Draw main circle - simple solid color
           ctx.beginPath();
           ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
-          
-          // Gradient fill for Neo4j look - with safety checks
-          try {
-            const gradientX = node.x - nodeRadius * 0.3;
-            const gradientY = node.y - nodeRadius * 0.3;
-            
-            // Ensure all gradient parameters are finite numbers
-            if (isFinite(gradientX) && isFinite(gradientY) && 
-                isFinite(node.x) && isFinite(node.y) && 
-                isFinite(nodeRadius)) {
-              const gradient = ctx.createRadialGradient(
-                gradientX, 
-                gradientY, 
-                0,
-                node.x, 
-                node.y, 
-                nodeRadius
-              );
-              const baseColor = getNodeColor(node);
-              gradient.addColorStop(0, baseColor + 'FF');
-              gradient.addColorStop(1, baseColor + 'CC');
-              ctx.fillStyle = gradient;
-            } else {
-              // Fallback to solid color if gradient fails
-              ctx.fillStyle = getNodeColor(node);
-            }
-          } catch (e) {
-            // Fallback to solid color on error
-            ctx.fillStyle = getNodeColor(node);
-          }
+          ctx.fillStyle = getNodeColor(node);
           ctx.fill();
           
-          // Border
-          ctx.strokeStyle = isSelected || isInPath ? '#FFFFFF' : '#2C3E50';
+          // Border - thicker for selected/path nodes
+          ctx.strokeStyle = isSelected || isInPath ? '#FFFFFF' : '#34495E';
           ctx.lineWidth = isSelected || isInPath ? 3 / globalScale : 2 / globalScale;
           ctx.stroke();
           
           // Draw text inside circle
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`;
+          ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           
           // Handle long labels - truncate if needed
           let displayLabel = label;
-          const maxLength = Math.floor(nodeRadius * 2 / (fontSize * 0.6));
+          const maxLength = Math.floor(nodeRadius * 2 / (fontSize * 0.55));
           if (label.length > maxLength) {
             displayLabel = label.substring(0, maxLength - 3) + '...';
           }
@@ -146,12 +109,12 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           node.fx = null;
           node.fy = null;
         }}
-        linkDirectionalArrowLength={6}
+        linkDirectionalArrowLength={5}
         linkDirectionalArrowRelPos={1}
-        linkDirectionalArrowColor={() => '#68A7AD'}
-        linkColor={() => '#68A7AD80'} // Semi-transparent
-        linkCurvature={0.15}
-        linkDistance={70}
+        linkDirectionalArrowColor={() => '#7F8C8D'}
+        linkColor={() => '#BDC3C7'}
+        linkCurvature={0.1}
+        linkDistance={65}
         linkWidth={(link) => {
           // Highlight links in optimized path
           if (optimizationResult && optimizationResult.sequence) {
@@ -159,20 +122,19 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
             const sourceIdx = seq.indexOf(link.source.id || link.source);
             const targetIdx = seq.indexOf(link.target.id || link.target);
             if (sourceIdx >= 0 && targetIdx >= 0 && targetIdx === sourceIdx + 1) {
-              return 3; // Thicker for path links
+              return 2.5; // Thicker for path links
             }
           }
           return 1.5;
         }}
-        linkDirectionalParticles={0}
         cooldownTicks={100}
         onEngineStop={handleEngineStop}
         d3Force={{
-          charge: -500,
-          linkDistance: 70,
-          linkStrength: 0.7,
-          centerStrength: 0.15,
-          collision: { radius: 28 }
+          charge: -450,
+          linkDistance: 65,
+          linkStrength: 0.75,
+          centerStrength: 0.2,
+          collision: { radius: 26 }
         }}
       />
     </div>
