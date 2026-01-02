@@ -5,20 +5,25 @@ import './KnowledgeGraph.css';
 const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
   const graphRef = useRef();
 
-  useEffect(() => {
-    if (graphRef.current && graphData) {
-      // Highlight nodes based on selection
-      graphRef.current.nodeColor((node) => {
-        if (optimizationResult && optimizationResult.sequence.includes(node.id)) {
-          return '#e74c3c'; // Red for optimized path
-        }
-        if (selectedParts.includes(node.id)) {
-          return '#3498db'; // Blue for selected
-        }
-        return '#95a5a6'; // Gray for default
-      });
+  // Node color function
+  const getNodeColor = (node) => {
+    if (optimizationResult && optimizationResult.sequence && optimizationResult.sequence.includes(node.id)) {
+      return '#e74c3c'; // Red for optimized path
     }
-  }, [graphData, selectedParts, optimizationResult]);
+    if (selectedParts && selectedParts.includes(node.id)) {
+      return '#3498db'; // Blue for selected
+    }
+    return '#95a5a6'; // Gray for default
+  };
+
+  // Handle engine stop with safe ref check
+  const handleEngineStop = () => {
+    if (graphRef.current && typeof graphRef.current.zoomToFit === 'function') {
+      setTimeout(() => {
+        graphRef.current.zoomToFit(400);
+      }, 100);
+    }
+  };
 
   if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
     return <div className="graph-placeholder">Loading knowledge graph...</div>;
@@ -44,12 +49,13 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         ref={graphRef}
         graphData={transformedData}
         nodeLabel={(node) => node.name || node.id}
+        nodeColor={getNodeColor}
         nodeRelSize={6}
         linkDirectionalArrowLength={6}
         linkDirectionalArrowRelPos={1}
         linkCurvature={0.25}
         cooldownTicks={100}
-        onEngineStop={() => graphRef.current.zoomToFit(400)}
+        onEngineStop={handleEngineStop}
       />
     </div>
   );
