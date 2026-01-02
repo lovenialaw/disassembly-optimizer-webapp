@@ -30,16 +30,17 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
   }
 
   // Transform graph data to format expected by react-force-graph
+  // Add safety checks for edge cases
   const transformedData = {
-    nodes: graphData.nodes.map(node => ({
-      id: node.id,
-      name: node.label || node.id,
-      ...node.properties
+    nodes: (graphData.nodes || []).map(node => ({
+      id: node.id || String(node),
+      name: node.label || node.id || String(node),
+      ...(node.properties || {})
     })),
-    links: graphData.edges.map(edge => ({
-      source: edge.source,
-      target: edge.target,
-      type: edge.type
+    links: (graphData.edges || []).map(edge => ({
+      source: edge.source || edge.from,
+      target: edge.target || edge.to,
+      type: edge.type || 'disassembles_to'
     }))
   };
 

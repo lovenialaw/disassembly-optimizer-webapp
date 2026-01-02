@@ -39,11 +39,13 @@ function App() {
     try {
       const data = await getProducts();
       setProducts(data);
-      if (data.length > 0) {
+      if (data && data.length > 0) {
         setSelectedProduct(data[0].id);
       }
     } catch (error) {
       console.error('Error loading products:', error);
+      // Set empty state instead of crashing
+      setProducts([]);
     }
   };
 
@@ -59,6 +61,9 @@ function App() {
       setOptimizationResult(null);
     } catch (error) {
       console.error('Error loading product data:', error);
+      // Set empty state instead of crashing
+      setProductMetadata(null);
+      setGraphData(null);
     }
   };
 
