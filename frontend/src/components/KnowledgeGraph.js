@@ -50,29 +50,59 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         ref={graphRef}
         graphData={transformedData}
         nodeColor={getNodeColor}
-        nodeRelSize={8}
+        nodeRelSize={0}
         nodeLabel={(node) => node.name || node.id}
         nodeCanvasObject={(node, ctx, globalScale) => {
           const label = node.name || node.id;
-          const fontSize = 10 / Math.sqrt(globalScale);
+          const fontSize = 9 / Math.sqrt(globalScale);
+          const nodeRadius = 20;
+          
+          // Draw circle
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
+          ctx.fillStyle = getNodeColor(node);
+          ctx.fill();
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 2 / globalScale;
+          ctx.stroke();
+          
+          // Draw text inside circle
+          ctx.fillStyle = '#ffffff';
           ctx.font = `bold ${fontSize}px Sans-Serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = getNodeColor(node);
-          ctx.fillText(label, node.x, node.y + 12);
+          
+          // Handle long labels - truncate if needed
+          let displayLabel = label;
+          if (label.length > 15) {
+            displayLabel = label.substring(0, 12) + '...';
+          }
+          
+          ctx.fillText(displayLabel, node.x, node.y);
         }}
-        linkDirectionalArrowLength={4}
+        onNodeDrag={(node) => {
+          // Allow nodes to be dragged
+          node.fx = node.x;
+          node.fy = node.y;
+        }}
+        onNodeDragEnd={(node) => {
+          // Release node after dragging
+          node.fx = null;
+          node.fy = null;
+        }}
+        linkDirectionalArrowLength={5}
         linkDirectionalArrowRelPos={1}
         linkCurvature={0.1}
-        linkDistance={40}
-        linkWidth={1}
+        linkDistance={60}
+        linkWidth={1.5}
         cooldownTicks={100}
         onEngineStop={handleEngineStop}
         d3Force={{
-          charge: -300,
-          linkDistance: 40,
-          linkStrength: 0.7,
-          centerStrength: 0.1
+          charge: -400,
+          linkDistance: 60,
+          linkStrength: 0.8,
+          centerStrength: 0.2,
+          collision: { radius: 25 }
         }}
       />
     </div>
