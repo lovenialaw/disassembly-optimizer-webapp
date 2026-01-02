@@ -158,8 +158,12 @@ def optimize_disassembly(product_id):
     data = request.json
     target_parts = data.get('target_parts', [])
     parameters = data.get('parameters', {})
-
+    
     try:
+        # Validate input
+        if not target_parts or len(target_parts) == 0:
+            return jsonify({'error': 'No target parts specified'}), 400
+        
         # Get graph data - prefer CSV for algorithm compatibility
         csv_path = os.path.join(CSV_DIR, f'{product_id}_graph.csv')
         if os.path.exists(csv_path):
@@ -174,10 +178,14 @@ def optimize_disassembly(product_id):
             }
         else:
             # Fallback to Neo4j
-            graph_data = neo4j_client.get_product_graph(product_id)
+            if neo4j_client:
+                graph_data = neo4j_client.get_product_graph(product_id)
+            else:
+                graph_data = None
+            
             if not graph_data:
                 return jsonify({'error': 'No graph data found'}), 404
-
+        
         # Run optimization algorithm
         result = optimizer.optimize(
             product_id=product_id,
@@ -185,8 +193,11 @@ def optimize_disassembly(product_id):
             target_parts=target_parts,
             parameters=parameters
         )
-
+        
         return jsonify(result)
+    except ValueError as e:
+        # User input errors
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()

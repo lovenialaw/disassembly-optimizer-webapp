@@ -10,23 +10,40 @@ const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
     }
   };
 
+  if (!parts || parts.length === 0) {
+    return (
+      <div className="part-selector">
+        <label>Select Parts to Disassemble</label>
+        <div className="parts-list">
+          <p>No parts available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="part-selector">
       <label>Select Parts to Disassemble</label>
       <div className="parts-list">
-        {parts.map((part) => (
-          <div key={part.id || part.name} className="part-item">
-            <input
-              type="checkbox"
-              id={`part-${part.id || part.name}`}
-              checked={selectedParts.includes(part.id || part.name)}
-              onChange={() => handleTogglePart(part.id || part.name)}
-            />
-            <label htmlFor={`part-${part.id || part.name}`}>
-              {part.name || part.id}
-            </label>
-          </div>
-        ))}
+        {parts.map((part, index) => {
+          // Handle different metadata formats
+          const partId = part.id || part.name || part.component || `part-${index}`;
+          const partName = part.name || part.component || part.id || `Part ${index + 1}`;
+          
+          return (
+            <div key={partId} className="part-item">
+              <input
+                type="checkbox"
+                id={`part-${partId}`}
+                checked={selectedParts.includes(partId)}
+                onChange={() => handleTogglePart(partId)}
+              />
+              <label htmlFor={`part-${partId}`}>
+                {partName}
+              </label>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
