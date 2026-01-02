@@ -60,6 +60,36 @@ def get_product_metadata(product_id):
     if os.path.exists(metadata_path):
         with open(metadata_path, 'r') as f:
             metadata = json.load(f)
+        
+        # Transform components to have id and name fields for frontend compatibility
+        if isinstance(metadata, dict) and 'components' in metadata:
+            transformed_components = []
+            for comp in metadata['components']:
+                # Handle different metadata formats
+                component_id = comp.get('component') or comp.get('id') or comp.get('name')
+                component_name = comp.get('component') or comp.get('name') or comp.get('id')
+                
+                transformed_comp = {
+                    'id': component_id,
+                    'name': component_name,
+                    **comp  # Keep all original fields
+                }
+                transformed_components.append(transformed_comp)
+            
+            metadata['components'] = transformed_components
+        elif isinstance(metadata, list):
+            # If metadata is a list of components
+            metadata = {
+                'components': [
+                    {
+                        'id': comp.get('component') or comp.get('id') or comp.get('name'),
+                        'name': comp.get('component') or comp.get('name') or comp.get('id'),
+                        **comp
+                    }
+                    for comp in metadata
+                ]
+            }
+        
         return jsonify(metadata)
     return jsonify({'error': 'Product not found'}), 404
 
