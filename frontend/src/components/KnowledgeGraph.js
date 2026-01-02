@@ -104,16 +104,26 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           node.fy = node.y;
         }}
         onNodeDragEnd={(node) => {
-          // Release node after dragging (can be moved freely)
-          node.fx = null;
-          node.fy = null;
+          // Keep node fixed at new position after dragging
+          node.fx = node.x;
+          node.fy = node.y;
         }}
-        linkDirectionalArrowLength={5}
+        onNodeClick={(node) => {
+          // Toggle fixed position on click
+          if (node.fx !== undefined && node.fx !== null) {
+            node.fx = null;
+            node.fy = null;
+          } else {
+            node.fx = node.x;
+            node.fy = node.y;
+          }
+        }}
+        linkDirectionalArrowLength={6}
         linkDirectionalArrowRelPos={1}
         linkDirectionalArrowColor={() => '#7F8C8D'}
         linkColor={() => '#BDC3C7'}
         linkCurvature={0.1}
-        linkDistance={65}
+        linkDistance={100}
         linkWidth={(link) => {
           // Highlight links in optimized path
           if (optimizationResult && optimizationResult.sequence) {
@@ -126,14 +136,14 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           }
           return 1.5;
         }}
-        cooldownTicks={100}
+        cooldownTicks={150}
         onEngineStop={handleEngineStop}
         d3Force={{
-          charge: -450,
-          linkDistance: 65,
-          linkStrength: 0.75,
-          centerStrength: 0.2,
-          collision: { radius: 26 }
+          charge: -800,
+          linkDistance: 100,
+          linkStrength: 0.5,
+          centerStrength: 0.1,
+          collision: { radius: 35 }
         }}
       />
     </div>
