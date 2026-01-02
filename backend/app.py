@@ -60,22 +60,24 @@ def get_product_metadata(product_id):
     if os.path.exists(metadata_path):
         with open(metadata_path, 'r') as f:
             metadata = json.load(f)
-        
+
         # Transform components to have id and name fields for frontend compatibility
         if isinstance(metadata, dict) and 'components' in metadata:
             transformed_components = []
             for comp in metadata['components']:
                 # Handle different metadata formats
-                component_id = comp.get('component') or comp.get('id') or comp.get('name')
-                component_name = comp.get('component') or comp.get('name') or comp.get('id')
-                
+                component_id = comp.get('component') or comp.get(
+                    'id') or comp.get('name')
+                component_name = comp.get('component') or comp.get(
+                    'name') or comp.get('id')
+
                 transformed_comp = {
                     'id': component_id,
                     'name': component_name,
                     **comp  # Keep all original fields
                 }
                 transformed_components.append(transformed_comp)
-            
+
             metadata['components'] = transformed_components
         elif isinstance(metadata, list):
             # If metadata is a list of components
@@ -89,7 +91,7 @@ def get_product_metadata(product_id):
                     for comp in metadata
                 ]
             }
-        
+
         return jsonify(metadata)
     return jsonify({'error': 'Product not found'}), 404
 
@@ -188,12 +190,12 @@ def optimize_disassembly(product_id):
     data = request.json
     target_parts = data.get('target_parts', [])
     parameters = data.get('parameters', {})
-    
+
     try:
         # Validate input
         if not target_parts or len(target_parts) == 0:
             return jsonify({'error': 'No target parts specified'}), 400
-        
+
         # Get graph data - prefer CSV for algorithm compatibility
         csv_path = os.path.join(CSV_DIR, f'{product_id}_graph.csv')
         if os.path.exists(csv_path):
@@ -212,10 +214,10 @@ def optimize_disassembly(product_id):
                 graph_data = neo4j_client.get_product_graph(product_id)
             else:
                 graph_data = None
-            
+
             if not graph_data:
                 return jsonify({'error': 'No graph data found'}), 404
-        
+
         # Run optimization algorithm
         result = optimizer.optimize(
             product_id=product_id,
@@ -223,7 +225,7 @@ def optimize_disassembly(product_id):
             target_parts=target_parts,
             parameters=parameters
         )
-        
+
         return jsonify(result)
     except ValueError as e:
         # User input errors

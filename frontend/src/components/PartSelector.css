@@ -27,6 +27,7 @@
   gap: 0.5rem;
 }
 
+.part-item input[type="radio"],
 .part-item input[type="checkbox"] {
   cursor: pointer;
 }

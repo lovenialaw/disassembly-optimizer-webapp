@@ -108,18 +108,21 @@ function App() {
                 onSelectParts={setSelectedParts}
               />
               
-              <ParameterPanel
-                parameters={parameters}
-                onUpdateParameters={setParameters}
-              />
-              
-              <button 
-                className="optimize-button"
-                onClick={handleOptimize}
-                disabled={selectedParts.length === 0}
-              >
-                Optimize Disassembly
-              </button>
+              {selectedParts.length > 0 && (
+                <>
+                  <ParameterPanel
+                    parameters={parameters}
+                    onUpdateParameters={setParameters}
+                  />
+                  
+                  <button 
+                    className="optimize-button"
+                    onClick={handleOptimize}
+                  >
+                    Optimize Disassembly
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>

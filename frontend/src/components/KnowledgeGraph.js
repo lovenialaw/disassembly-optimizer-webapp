@@ -49,14 +49,31 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
       <ForceGraph2D
         ref={graphRef}
         graphData={transformedData}
-        nodeLabel={(node) => node.name || node.id}
         nodeColor={getNodeColor}
-        nodeRelSize={6}
-        linkDirectionalArrowLength={6}
+        nodeRelSize={8}
+        nodeLabel={(node) => node.name || node.id}
+        nodeCanvasObject={(node, ctx, globalScale) => {
+          const label = node.name || node.id;
+          const fontSize = 10 / Math.sqrt(globalScale);
+          ctx.font = `bold ${fontSize}px Sans-Serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = getNodeColor(node);
+          ctx.fillText(label, node.x, node.y + 12);
+        }}
+        linkDirectionalArrowLength={4}
         linkDirectionalArrowRelPos={1}
-        linkCurvature={0.25}
+        linkCurvature={0.1}
+        linkDistance={40}
+        linkWidth={1}
         cooldownTicks={100}
         onEngineStop={handleEngineStop}
+        d3Force={{
+          charge: -300,
+          linkDistance: 40,
+          linkStrength: 0.7,
+          centerStrength: 0.1
+        }}
       />
     </div>
   );

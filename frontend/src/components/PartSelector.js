@@ -2,18 +2,15 @@ import React from 'react';
 import './PartSelector.css';
 
 const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
-  const handleTogglePart = (partId) => {
-    if (selectedParts.includes(partId)) {
-      onSelectParts(selectedParts.filter(id => id !== partId));
-    } else {
-      onSelectParts([...selectedParts, partId]);
-    }
+  const handleSelectPart = (partId) => {
+    // Single selection - replace array with single item
+    onSelectParts([partId]);
   };
 
   if (!parts || parts.length === 0) {
     return (
       <div className="part-selector">
-        <label>Select Parts to Disassemble</label>
+        <label>Select Part to Disassemble</label>
         <div className="parts-list">
           <p>No parts available</p>
         </div>
@@ -21,9 +18,12 @@ const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
     );
   }
 
+  // Get selected part (first item in array)
+  const selectedPart = selectedParts && selectedParts.length > 0 ? selectedParts[0] : null;
+
   return (
     <div className="part-selector">
-      <label>Select Parts to Disassemble</label>
+      <label>Select Part to Disassemble</label>
       <div className="parts-list">
         {parts.map((part, index) => {
           // Handle different metadata formats
@@ -33,10 +33,11 @@ const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
           return (
             <div key={partId} className="part-item">
               <input
-                type="checkbox"
+                type="radio"
+                name="selected-part"
                 id={`part-${partId}`}
-                checked={selectedParts.includes(partId)}
-                onChange={() => handleTogglePart(partId)}
+                checked={selectedPart === partId}
+                onChange={() => handleSelectPart(partId)}
               />
               <label htmlFor={`part-${partId}`}>
                 {partName}
