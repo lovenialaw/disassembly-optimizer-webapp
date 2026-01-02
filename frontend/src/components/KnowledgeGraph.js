@@ -68,7 +68,6 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           const nodeRadius = 22;
           const isSelected = selectedParts && selectedParts.includes(node.id);
           const isInPath = optimizationResult && optimizationResult.sequence && optimizationResult.sequence.includes(node.id);
-          const isHovered = hoveredNode && hoveredNode.id === node.id;
           
           // Draw main circle - simple solid color
           ctx.beginPath();
