@@ -57,6 +57,12 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         nodeRelSize={0}
         nodeLabel={(node) => `${node.name || node.id}`}
         nodeCanvasObject={(node, ctx, globalScale) => {
+          // Safety check: ensure node has valid coordinates
+          if (typeof node.x !== 'number' || typeof node.y !== 'number' || 
+              !isFinite(node.x) || !isFinite(node.y)) {
+            return; // Skip rendering if coordinates are invalid
+          }
+          
           const label = node.name || node.id;
           const fontSize = Math.max(10, 12 / Math.sqrt(globalScale));
           const nodeRadius = 24;
@@ -76,19 +82,35 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           ctx.beginPath();
           ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
           
-          // Gradient fill for Neo4j look
-          const gradient = ctx.createRadialGradient(
-            node.x - nodeRadius * 0.3, 
-            node.y - nodeRadius * 0.3, 
-            0,
-            node.x, 
-            node.y, 
-            nodeRadius
-          );
-          const baseColor = getNodeColor(node);
-          gradient.addColorStop(0, baseColor + 'FF');
-          gradient.addColorStop(1, baseColor + 'CC');
-          ctx.fillStyle = gradient;
+          // Gradient fill for Neo4j look - with safety checks
+          try {
+            const gradientX = node.x - nodeRadius * 0.3;
+            const gradientY = node.y - nodeRadius * 0.3;
+            
+            // Ensure all gradient parameters are finite numbers
+            if (isFinite(gradientX) && isFinite(gradientY) && 
+                isFinite(node.x) && isFinite(node.y) && 
+                isFinite(nodeRadius)) {
+              const gradient = ctx.createRadialGradient(
+                gradientX, 
+                gradientY, 
+                0,
+                node.x, 
+                node.y, 
+                nodeRadius
+              );
+              const baseColor = getNodeColor(node);
+              gradient.addColorStop(0, baseColor + 'FF');
+              gradient.addColorStop(1, baseColor + 'CC');
+              ctx.fillStyle = gradient;
+            } else {
+              // Fallback to solid color if gradient fails
+              ctx.fillStyle = getNodeColor(node);
+            }
+          } catch (e) {
+            // Fallback to solid color on error
+            ctx.fillStyle = getNodeColor(node);
+          }
           ctx.fill();
           
           // Border
