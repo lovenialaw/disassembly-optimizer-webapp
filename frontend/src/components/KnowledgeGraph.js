@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import './KnowledgeGraph.css';
 
