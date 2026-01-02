@@ -5,6 +5,7 @@ import ModelViewer from './components/ModelViewer';
 import KnowledgeGraph from './components/KnowledgeGraph';
 import ParameterPanel from './components/ParameterPanel';
 import PartSelector from './components/PartSelector';
+import ComponentProperties from './components/ComponentProperties';
 import ResultsPanel from './components/ResultsPanel';
 import AnimationControls from './components/AnimationControls';
 import { getProducts, getProductMetadata, getProductGraph, optimizeDisassembly } from './services/api';
@@ -24,6 +25,7 @@ function App() {
   const [optimizationResult, setOptimizationResult] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [currentAnimationStep, setCurrentAnimationStep] = useState(0);
+  const [componentProperties, setComponentProperties] = useState({});
 
   useEffect(() => {
     loadProducts();
@@ -67,16 +69,24 @@ function App() {
     }
   };
 
+  const handleComponentPropertiesChange = (partId, properties) => {
+    setComponentProperties(prev => ({
+      ...prev,
+      [partId]: properties
+    }));
+  };
+
   const handleOptimize = async () => {
     if (!selectedProduct || selectedParts.length === 0) {
-      alert('Please select a product and at least one part to disassemble');
+      alert('Please select a product and a part to disassemble');
       return;
     }
 
     try {
       const result = await optimizeDisassembly(selectedProduct, {
         target_parts: selectedParts,
-        parameters: parameters
+        parameters: parameters,
+        component_properties: componentProperties
       });
       setOptimizationResult(result);
       setCurrentAnimationStep(0);
@@ -110,6 +120,12 @@ function App() {
               
               {selectedParts.length > 0 && (
                 <>
+                  <ComponentProperties
+                    productId={selectedProduct}
+                    selectedPart={selectedParts[0]}
+                    onPropertiesChange={handleComponentPropertiesChange}
+                  />
+                  
                   <ParameterPanel
                     parameters={parameters}
                     onUpdateParameters={setParameters}

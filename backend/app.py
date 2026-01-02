@@ -190,6 +190,7 @@ def optimize_disassembly(product_id):
     data = request.json
     target_parts = data.get('target_parts', [])
     parameters = data.get('parameters', {})
+    component_properties = data.get('component_properties', {})
 
     try:
         # Validate input
@@ -223,7 +224,8 @@ def optimize_disassembly(product_id):
             product_id=product_id,
             graph_data=graph_data,
             target_parts=target_parts,
-            parameters=parameters
+            parameters=parameters,
+            component_properties=component_properties
         )
 
         return jsonify(result)

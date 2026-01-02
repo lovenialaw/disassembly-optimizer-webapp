@@ -15,7 +15,7 @@ class DisassemblyOptimizer:
     def __init__(self):
         self.optimization_history = []
 
-    def optimize(self, product_id: str, graph_data: Any, target_parts: List[str], parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def optimize(self, product_id: str, graph_data: Any, target_parts: List[str], parameters: Dict[str, Any], component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
         Optimize disassembly path using Dijkstra or Genetic Algorithm
 
@@ -80,11 +80,11 @@ class DisassemblyOptimizer:
 
         if algorithm == 'genetic':
             result = self._genetic_algorithm(
-                product_id, edges_df, G_topology, all_paths, target, start_nodes, parameters
+                product_id, edges_df, G_topology, all_paths, target, start_nodes, parameters, component_properties
             )
         else:
             result = self._dijkstra_algorithm(
-                product_id, edges_df, G_topology, all_paths, target, start_nodes, parameters
+                product_id, edges_df, G_topology, all_paths, target, start_nodes, parameters, component_properties
             )
 
         return result
@@ -106,19 +106,19 @@ class DisassemblyOptimizer:
             return pd.DataFrame(df_data)
         return pd.DataFrame()
 
-    def _dijkstra_algorithm(self, product_id: str, edges_df: pd.DataFrame,
-                            G_topology: nx.DiGraph, all_paths: List[List[str]],
-                            target: str, start_nodes: List[str],
-                            parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def _dijkstra_algorithm(self, product_id: str, edges_df: pd.DataFrame, 
+                           G_topology: nx.DiGraph, all_paths: List[List[str]],
+                           target: str, start_nodes: List[str], 
+                           parameters: Dict[str, Any], component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
         """Dijkstra algorithm for disassembly optimization"""
 
         # Compute edge weights based on product type
         if product_id == 'kettle':
             G = self._build_weighted_graph_kettle(
-                edges_df, all_paths, parameters)
+                edges_df, all_paths, parameters, component_properties)
         else:  # gearbox
             G = self._build_weighted_graph_gearbox(
-                edges_df, all_paths, parameters)
+                edges_df, all_paths, parameters, component_properties)
 
         # Run Dijkstra
         best_path = None
@@ -168,18 +168,18 @@ class DisassemblyOptimizer:
         }
 
     def _genetic_algorithm(self, product_id: str, edges_df: pd.DataFrame,
-                           G_topology: nx.DiGraph, all_paths: List[List[str]],
-                           target: str, start_nodes: List[str],
-                           parameters: Dict[str, Any]) -> Dict[str, Any]:
+                          G_topology: nx.DiGraph, all_paths: List[List[str]],
+                          target: str, start_nodes: List[str],
+                          parameters: Dict[str, Any], component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> Dict[str, Any]:
         """Genetic algorithm for disassembly optimization"""
 
         # Build weighted graph
         if product_id == 'kettle':
             G = self._build_weighted_graph_kettle(
-                edges_df, all_paths, parameters)
+                edges_df, all_paths, parameters, component_properties)
         else:  # gearbox
             G = self._build_weighted_graph_gearbox(
-                edges_df, all_paths, parameters)
+                edges_df, all_paths, parameters, component_properties)
 
         # GA parameters
         retain = parameters.get('retain', 0.5)
@@ -261,9 +261,10 @@ class DisassemblyOptimizer:
             'animation_steps': self._generate_animation_steps(best_overall)
         }
 
-    def _build_weighted_graph_kettle(self, edges_df: pd.DataFrame,
+    def _build_weighted_graph_kettle(self, edges_df: pd.DataFrame, 
                                      all_paths: List[List[str]],
-                                     parameters: Dict[str, Any]) -> nx.DiGraph:
+                                     parameters: Dict[str, Any],
+                                     component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> nx.DiGraph:
         """Build weighted graph for kettle using CSV data or defaults"""
 
         # Mapping dictionaries
@@ -289,25 +290,37 @@ class DisassemblyOptimizer:
         G = nx.DiGraph()
         edge_weights = {}
 
-        # Use CSV data if available (kettle has safety_risk, fastener, tool, fastener_count)
-        if 'safety_risk' in edges_df.columns:
-            for _, row in edges_df.iterrows():
-                u, v = row['from'], row['to']
+        # Use user-provided component properties or CSV data
+        for _, row in edges_df.iterrows():
+            u, v = row['from'], row['to']
+            
+            # Check if user provided properties for target component (v)
+            if component_properties and v in component_properties:
+                user_props = component_properties[v]
+                safety_str = str(user_props.get('safety_risk', 'Medium')).strip()
+                fastener_str = str(user_props.get('fastener', 'Screws')).strip()
+                tool_str = str(user_props.get('tool', 'Hand')).strip()
+                fastener_count = user_props.get('fastener_count', 2)
+            elif 'safety_risk' in edges_df.columns:
+                # Use CSV data if available
                 safety_str = str(row.get('safety_risk', 'Medium')).strip()
-                safety = safety_map.get(safety_str, 2)
-
                 fastener_str = str(row.get('fastener', 'Screws')).strip()
-                fastener = fastener_map.get(fastener_str, 2)
-
                 tool_str = str(row.get('tool', 'Hand')).strip()
-                tool = tool_map.get(tool_str, 1)
-
-                count_penalty = fastener_count_penalty(
-                    row.get('fastener_count', 2))
-
-                weight = safety + fastener + tool + count_penalty
-                edge_weights[(u, v)] = weight
-                G.add_edge(u, v, weight=weight)
+                fastener_count = row.get('fastener_count', 2)
+            else:
+                # Defaults
+                safety_str = 'Medium'
+                fastener_str = 'Screws'
+                tool_str = 'Hand'
+                fastener_count = 2
+            
+            safety = safety_map.get(safety_str, 2)
+            fastener = fastener_map.get(fastener_str, 2)
+            tool = tool_map.get(tool_str, 1)
+            count_penalty = fastener_count_penalty(fastener_count)
+            
+            weight = safety + fastener + tool + count_penalty
+            G.add_edge(u, v, weight=weight)
         else:
             # Use default weights if CSV doesn't have the data
             for _, row in edges_df.iterrows():
@@ -319,8 +332,9 @@ class DisassemblyOptimizer:
         return G
 
     def _build_weighted_graph_gearbox(self, edges_df: pd.DataFrame,
-                                      all_paths: List[List[str]],
-                                      parameters: Dict[str, Any]) -> nx.DiGraph:
+                                     all_paths: List[List[str]],
+                                     parameters: Dict[str, Any],
+                                     component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> nx.DiGraph:
         """Build weighted graph for gearbox using component safety and rule-based costs"""
 
         # Get component safety from parameters or use defaults
@@ -352,20 +366,34 @@ class DisassemblyOptimizer:
 
         for _, row in edges_df.iterrows():
             u, v = row['from'], row['to']
-
-            # Get safety for target component
-            safety_val = component_safety.get(v, 2)  # Default to Medium
-            if isinstance(safety_val, str):
-                safety = default_safety.get(safety_val, 2)
+            
+            # Check if user provided properties for target component (v)
+            if component_properties and v in component_properties:
+                user_props = component_properties[v]
+                # Get safety from user input
+                safety_val = user_props.get('safety_risk', 'Medium')
+                if isinstance(safety_val, str):
+                    safety = default_safety.get(safety_val, 2)
+                else:
+                    safety = safety_val
+                
+                # Get tool from user input
+                user_tool = user_props.get('tool', '')
+                tool = tool_cost(user_tool if user_tool else None)
             else:
-                safety = safety_val
-
-            # Get tool cost
-            tool = tool_cost(row.get('disassembly_tools', None))
-
-            # Get fastener cost
+                # Use component_safety from parameters or defaults
+                safety_val = component_safety.get(v, 2)  # Default to Medium
+                if isinstance(safety_val, str):
+                    safety = default_safety.get(safety_val, 2)
+                else:
+                    safety = safety_val
+                
+                # Get tool cost from CSV or defaults
+                tool = tool_cost(row.get('disassembly_tools', None))
+            
+            # Get fastener cost (rule-based, same for both)
             fastener = fastener_count_cost(v)
-
+            
             weight = safety + tool + fastener
             G.add_edge(u, v, weight=weight)
 
