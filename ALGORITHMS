@@ -1,0 +1,572 @@
+#DIJIKSTRA ALGORITHM FOR KETTLE 
+import pandas as pd
+import networkx as nx
+
+# 1. Load & clean data
+edges_df = pd.read_csv("kettle_graph.csv")
+edges_df["from"] = edges_df["from"].astype(str).str.strip()
+edges_df["to"] = edges_df["to"].astype(str).str.strip()
+
+# 2. Define mappings
+safety_map = {"Low": 1, "Medium": 2, "High": 3}
+fastener_map = {"Snap fit": 1, "Spring": 1.5, "Screws": 2, "Wires": 3}
+tool_map = {"Hand": 1, "Pull": 1.5, "Philips screwdriver": 2, "Wire cutter": 3}
+
+def fastener_count_penalty(count):
+    if count <= 2:
+        return 1
+    elif count <= 4:
+        return 2
+    else:
+        return 3
+
+# 3. Build topology graph
+G_topology = nx.DiGraph()
+
+for _, row in edges_df.iterrows():
+    G_topology.add_edge(row["from"], row["to"])
+
+# 4. Target input 
+print("Available components:", list(G_topology.nodes))
+
+target = input("Enter component to disassemble: ").strip()
+
+if target not in G_topology.nodes:
+    raise ValueError(f"Target '{target}' not in graph")
+
+
+# 5. Start nodes
+start_nodes = [n for n in G_topology.nodes if G_topology.in_degree(n) == 0]
+
+
+# 6. Enumerate valid paths
+all_paths = []
+
+for start in start_nodes:
+    try:
+        all_paths.extend(nx.all_simple_paths(G_topology, start, target))
+    except nx.NetworkXNoPath:
+        pass
+
+if not all_paths:
+    raise ValueError("No valid disassembly paths found")
+
+print(f"\nNumber of valid disassembly paths: {len(all_paths)}")
+
+
+# 7. Collect EDGE weights
+edge_weights = {}
+
+print("\nEnter disassembly details for each connection:\n")
+
+for path in all_paths:
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i + 1]
+
+        if (u, v) in edge_weights:
+            continue
+
+        print(f"Disassembly step: {u} → {v}")
+
+        safety = input("  Safety risk (Low / Medium / High): ")
+        fastener = input("  Fastener type (Snap fit / Spring / Screws / Wires): ")
+        tool = input("  Tool used (Hand / Pull / Philips screwdriver / Wire cutter): ")
+        count = int(input("  Number of fasteners: "))
+
+        edge_weights[(u, v)] = (
+            safety_map[safety]
+            + fastener_map[fastener]
+            + tool_map[tool]
+            + fastener_count_penalty(count)
+        )
+
+
+# 8. Build WEIGHTED graph
+G = nx.DiGraph()
+G.add_nodes_from(G_topology.nodes)
+
+for (u, v), w in edge_weights.items():
+    G.add_edge(u, v, weight=w)
+
+
+# 9. Run Dijkstra (SAFE)
+best_path = None
+best_cost = float("inf")
+
+for start in start_nodes:
+    if start not in G:
+        continue
+
+    try:
+        path = nx.dijkstra_path(G, start, target, weight="weight")
+        cost = nx.dijkstra_path_length(G, start, target, weight="weight")
+
+        if cost < best_cost:
+            best_cost = cost
+            best_path = path
+    except nx.NetworkXNoPath:
+        pass
+
+
+# 10. Output
+print("\nDIJKSTRA RESULT (USER-DEFINED WEIGHTS)")
+print("Optimal disassembly sequence:", best_path)
+print("Total disassembly complexity:", best_cost)
+
+#GENETIC ALGORITHM FOR KETTLE
+import time
+import math
+import copy
+
+# =====================================================
+# 1. FITNESS FUNCTION
+# =====================================================
+
+def path_cost(path, G):
+    """Total disassembly complexity of a path"""
+    cost = 0
+    for i in range(len(path) - 1):
+        if not G.has_edge(path[i], path[i + 1]):
+            return float("inf")
+        cost += G[path[i]][path[i + 1]]["weight"]
+    return cost
+
+
+def fitness(path, G):
+    """Higher fitness = lower disassembly complexity"""
+    return 1 / (1 + path_cost(path, G))
+
+
+# =====================================================
+# 2. DEFAULT GA PARAMETERS (NO USER INPUT)
+# =====================================================
+
+DEFAULT_RETAIN = 0.5
+DEFAULT_MUTATION_RATE = 0.2
+DEFAULT_GENERATIONS = 30
+
+retain = DEFAULT_RETAIN
+mutation_rate = DEFAULT_MUTATION_RATE
+generations = DEFAULT_GENERATIONS
+
+
+# =====================================================
+# 3. POPULATION SIZE BASED ON NUMBER OF COMPONENTS
+# =====================================================
+# Example:
+#   3 components → 3! = 6 possible arrangements → population size = 6
+
+avg_path_length = int(sum(len(p) for p in all_paths) / len(all_paths))
+population_size = math.factorial(avg_path_length)
+
+# Safety guard (GA requires at least 2 chromosomes)
+population_size = max(2, population_size)
+
+print("=== GA PARAMETERS (DEFAULT) ===")
+print(f"Average components per path: {avg_path_length}")
+print(f"Population size (factorial): {avg_path_length}! = {population_size}")
+print(f"Retain rate: {retain}")
+print(f"Mutation rate: {mutation_rate}")
+print(f"Generations: {generations}")
+
+
+# =====================================================
+# 4. INITIAL POPULATION (DETERMINISTIC)
+# =====================================================
+# Take paths in fixed order, no random sampling
+
+population = []
+for path in all_paths:
+    population.append(path)
+    if len(population) >= population_size:
+        break
+
+# If not enough paths, repeat deterministically
+idx = 0
+while len(population) < population_size:
+    population.append(all_paths[idx % len(all_paths)])
+    idx += 1
+
+
+best_overall = None
+best_cost = float("inf")
+
+
+# =====================================================
+# 5. SELECTION (DETERMINISTIC)
+# =====================================================
+
+def select_population(population, G, retain):
+    """Keep the top retain% paths based on cost"""
+    population = sorted(population, key=lambda p: path_cost(p, G))
+    retain_length = max(1, int(len(population) * retain))
+    return population[:retain_length]
+
+
+# =====================================================
+# 6. MUTATION (DETERMINISTIC, NO RANDOMNESS)
+# =====================================================
+# Mutation replaces a chromosome using a fixed cycling rule
+
+def mutate_population(population, all_paths, mutation_rate, generation):
+    """
+    Deterministic mutation:
+    Periodically replaces a chromosome with another valid disassembly path.
+    No randomness is used.
+    """
+
+    if mutation_rate <= 0:
+        return population
+
+    mutation_interval = max(1, int(1 / mutation_rate))
+    new_population = copy.deepcopy(population)
+
+    if generation % mutation_interval == 0:
+        for i in range(len(new_population)):
+            new_population[i] = all_paths[(generation + i) % len(all_paths)]
+
+    return new_population
+
+
+# =====================================================
+# 7. GA MAIN LOOP
+# =====================================================
+
+start_time = time.time()
+mutation_counter = 0
+
+print("\n=== EVOLUTION STARTED ===")
+
+for gen in range(generations):
+
+    # Selection (elitist, deterministic)
+    population = select_population(population, G, retain)
+
+    # Mutation (deterministic replacement)
+    population = mutate_population(
+        population, all_paths, mutation_rate, gen
+    )
+
+    # Evaluate best solution
+    for path in population:
+        cost = path_cost(path, G)
+        if cost < best_cost:
+            best_cost = cost
+            best_overall = path
+
+
+# =====================================================
+# 8. RESULTS
+# =====================================================
+
+elapsed_time = time.time() - start_time
+
+print("\n🧬 GENETIC ALGORITHM RESULT (KETTLE)")
+print("Best disassembly sequence:")
+for i, step in enumerate(best_overall, 1):
+    print(f"  {i}. {step}")
+
+print(f"\nTotal disassembly complexity: {best_cost:.2f}")
+print(f"Generations: {generations}")
+print(f"Execution time: {elapsed_time:.2f} seconds")
+print("(Lower score = easier and safer disassembly)")
+
+#DIJIKSTRI ALGORITHM FOR GEARBOX
+import pandas as pd
+import networkx as nx
+
+# =====================================================
+# 1. LOAD CSV FROM NEO4J
+# =====================================================
+
+edges_df = pd.read_csv("gearbox_graph.csv")
+
+edges_df["from"] = edges_df["from"].astype(str).str.strip()
+edges_df["to"] = edges_df["to"].astype(str).str.strip()
+
+# =====================================================
+# 2. BUILD TOPOLOGY GRAPH (NO WEIGHTS YET)
+# =====================================================
+
+G_topology = nx.DiGraph()
+
+for _, row in edges_df.iterrows():
+    G_topology.add_edge(row["from"], row["to"])
+
+# =====================================================
+# 3. TARGET COMPONENT INPUT
+# =====================================================
+
+print("Available components:")
+for n in G_topology.nodes:
+    print("-", n)
+
+target = input("\nEnter component to disassemble: ").strip()
+
+if target not in G_topology.nodes:
+    raise ValueError(f"Target '{target}' not found in graph")
+
+# =====================================================
+# 4. IDENTIFY START NODES
+# =====================================================
+
+start_nodes = [n for n in G_topology.nodes if G_topology.in_degree(n) == 0]
+
+# =====================================================
+# 5. ENUMERATE VALID DISASSEMBLY PATHS
+# =====================================================
+
+all_paths = []
+
+for start in start_nodes:
+    try:
+        all_paths.extend(nx.all_simple_paths(G_topology, start, target))
+    except nx.NetworkXNoPath:
+        pass
+
+if not all_paths:
+    raise ValueError("No valid disassembly paths found")
+
+print(f"\nNumber of valid disassembly paths: {len(all_paths)}")
+
+# =====================================================
+# 6. USER INPUT: SAFETY RISK (ONCE PER COMPONENT)
+# =====================================================
+
+components_in_paths = set()
+for path in all_paths:
+    components_in_paths.update(path)
+
+print("\nEnter SAFETY RISK for each component (Low / Medium / High):")
+
+safety_map = {"Low": 1, "Medium": 2, "High": 3}
+component_safety = {}
+
+for comp in sorted(components_in_paths):
+    while True:
+        val = input(f"  {comp}: ").strip().title()
+        if val in safety_map:
+            component_safety[comp] = safety_map[val]
+            break
+        else:
+            print("    Invalid input. Enter Low / Medium / High.")
+
+# =====================================================
+# 7. OTHER COST MODELS (RULE-BASED)
+# =====================================================
+
+def tool_cost(tools):
+    if pd.isna(tools):
+        return 1
+    tools = str(tools).lower()
+    if "pull" in tools:
+        return 2
+    if "screw" in tools:
+        return 2
+    return 1
+
+
+def fastener_count_cost(component_name):
+    name = component_name.lower()
+    if "bolt" in name or "screw" in name:
+        return 3
+    if "snap ring" in name:
+        return 2
+    return 1
+
+# =====================================================
+# 8. COMPUTE EDGE WEIGHTS (USING USER SAFETY)
+# =====================================================
+
+def compute_weight(row):
+    safety = component_safety.get(row["to"], 1)
+    tool = tool_cost(row.get("disassembly_tools", None))
+    fastener = fastener_count_cost(row["to"])
+    return safety + tool + fastener
+
+
+edges_df["weight"] = edges_df.apply(compute_weight, axis=1)
+
+# =====================================================
+# 9. BUILD WEIGHTED GRAPH
+# =====================================================
+
+G = nx.DiGraph()
+
+for _, row in edges_df.iterrows():
+    G.add_edge(row["from"], row["to"], weight=row["weight"])
+
+# =====================================================
+# 10. RUN DIJKSTRA
+# =====================================================
+
+best_path = None
+best_cost = float("inf")
+
+for start in start_nodes:
+    try:
+        path = nx.dijkstra_path(G, start, target, weight="weight")
+        cost = nx.dijkstra_path_length(G, start, target, weight="weight")
+
+        if cost < best_cost:
+            best_cost = cost
+            best_path = path
+
+    except nx.NetworkXNoPath:
+        continue
+
+# =====================================================
+# 11. OUTPUT RESULTS
+# =====================================================
+
+print("\nDIJKSTRA RESULT (GEARBOX)")
+print("Optimal disassembly sequence:")
+
+for i, step in enumerate(best_path, 1):
+    print(f"  {i}. {step}")
+
+print(f"\nTotal disassembly complexity: {best_cost}")
+print("(Lower score = easier and safer disassembly)")
+
+#GENETIC ALGORITHM FOR GEARBOX
+import time
+import math
+import copy
+
+# =====================================================
+# 1. FITNESS FUNCTION
+# =====================================================
+
+def path_cost(path, G):
+    """Total disassembly complexity of a path"""
+    cost = 0
+    for i in range(len(path) - 1):
+        if not G.has_edge(path[i], path[i + 1]):
+            return float("inf")
+        cost += G[path[i]][path[i + 1]]["weight"]
+    return cost
+
+
+def fitness(path, G):
+    """Higher fitness = lower disassembly complexity"""
+    return 1 / (1 + path_cost(path, G))
+
+
+# =====================================================
+# 2. DEFAULT GA PARAMETERS (FIXED)
+# =====================================================
+
+retain = 0.5
+mutation_rate = 0.2
+generations = 30
+
+
+# =====================================================
+# 3. POPULATION SIZE (GEARBOX-SAFE)
+# =====================================================
+
+avg_path_length = int(sum(len(p) for p in all_paths) / len(all_paths))
+theoretical_population = math.factorial(avg_path_length)
+
+# ⚠️ CAP population size for gearbox scalability
+MAX_POPULATION = 100
+
+population_size = min(theoretical_population, MAX_POPULATION)
+population_size = max(2, population_size)
+
+print("=== GA PARAMETERS (GEARBOX) ===")
+print(f"Average components per path: {avg_path_length}")
+print(f"Theoretical population size: {avg_path_length}! = {theoretical_population}")
+print(f"Capped population size: {population_size}")
+print(f"Retain rate: {retain}")
+print(f"Mutation rate: {mutation_rate}")
+print(f"Generations: {generations}")
+
+
+# =====================================================
+# 4. INITIAL POPULATION (DETERMINISTIC)
+# =====================================================
+
+population = []
+for path in all_paths:
+    population.append(path)
+    if len(population) >= population_size:
+        break
+
+idx = 0
+while len(population) < population_size:
+    population.append(all_paths[idx % len(all_paths)])
+    idx += 1
+
+
+best_overall = None
+best_cost = float("inf")
+
+
+# =====================================================
+# 5. SELECTION (ELITIST, DETERMINISTIC)
+# =====================================================
+
+def select_population(population, G, retain):
+    population = sorted(population, key=lambda p: path_cost(p, G))
+    retain_length = max(1, int(len(population) * retain))
+    return population[:retain_length]
+
+
+# =====================================================
+# 6. MUTATION (DETERMINISTIC PATH REPLACEMENT)
+# =====================================================
+
+def mutate_population(population, all_paths, mutation_rate, generation):
+    if mutation_rate <= 0:
+        return population
+
+    mutation_interval = max(1, int(1 / mutation_rate))
+    new_population = copy.deepcopy(population)
+
+    if generation % mutation_interval == 0:
+        for i in range(len(new_population)):
+            new_population[i] = all_paths[(generation + i) % len(all_paths)]
+
+    return new_population
+
+
+# =====================================================
+# 7. GA MAIN LOOP
+# =====================================================
+
+start_time = time.time()
+
+print("\n=== GA EVOLUTION STARTED ===")
+
+for gen in range(generations):
+
+    population = select_population(population, G, retain)
+
+    population = mutate_population(
+        population, all_paths, mutation_rate, gen
+    )
+
+    for path in population:
+        cost = path_cost(path, G)
+        if cost < best_cost:
+            best_cost = cost
+            best_overall = path
+
+
+# =====================================================
+# 8. RESULTS
+# =====================================================
+
+elapsed_time = time.time() - start_time
+
+print("\n🧬 GENETIC ALGORITHM RESULT (GEARBOX)")
+print("Best disassembly sequence:")
+
+for i, step in enumerate(best_overall, 1):
+    print(f"  {i}. {step}")
+
+print(f"\nTotal disassembly complexity: {best_cost:.2f}")
+print(f"Generations: {generations}")
+print(f"Execution time: {elapsed_time:.2f} seconds")
+print("(Lower score = easier and safer disassembly)")

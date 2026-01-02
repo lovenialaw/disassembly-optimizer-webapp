@@ -1,0 +1,58 @@
+.results-panel {
+  padding: 1rem;
+}
+
+.results-panel h3 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.results-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.results-metrics h4,
+.results-sequence h4 {
+  font-size: 0.95rem;
+  color: #34495e;
+  margin-bottom: 0.75rem;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.metric-label {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.metric-value {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.sequence-list {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.sequence-list li {
+  padding: 0.25rem 0;
+  color: #34495e;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .results-content {
+    grid-template-columns: 1fr;
+  }
+}
+

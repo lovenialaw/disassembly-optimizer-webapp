@@ -1,0 +1,48 @@
+.animation-controls {
+  padding: 1rem;
+  background-color: #ecf0f1;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.controls-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.controls-buttons button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #bdc3c7;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.controls-buttons button:hover:not(:disabled) {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.controls-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.step-indicator {
+  font-size: 0.9rem;
+  color: #34495e;
+  font-weight: 600;
+}
+
+.step-info {
+  color: #7f8c8d;
+  font-weight: normal;
+  margin-left: 0.5rem;
+}
+

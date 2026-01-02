@@ -1,0 +1,655 @@
+{
+    "components": [
+        {
+            "component": "1st Gear",
+            "assembly": "First Gear Stage",
+            "blocked_by": [
+                "1st Gear Bearing Spacer"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "1st Gear Bearing Spacer",
+            "assembly": "First Gear Stage",
+            "blocked_by": [
+                "1st Gear Needle Roller Bearing"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "1st Gear Needle Roller Bearing",
+            "assembly": "First Gear Stage",
+            "blocked_by": [
+                "1st Gear Thrust Washer"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "1st Gear Thrust Washer",
+            "assembly": "First Gear Stage",
+            "blocked_by": [
+                "1st Gear Thrust Washer Pin or Ball"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "1st Gear Thrust Washer Pin or Ball",
+            "assembly": "First Gear Stage",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "2nd Gear",
+            "assembly": "Second Gear Stage",
+            "blocked_by": [
+                "Synchronizer Ring Set No.1 (Outer)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "2nd Gear Needle Roller Bearing",
+            "assembly": "Second Gear Stage",
+            "blocked_by": [
+                "2nd Gear"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "3rd Gear",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Synchronizer Ring No.2 (Output)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "3rd Gear Needle Roller Bearing",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "3rd Gear"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "5th Gear",
+            "assembly": "5th Gear Group",
+            "blocked_by": [
+                "Output Shaft Center Bearing"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "5th Gear Thrust Washer",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Counter Shaft Center Bearing",
+                "5th Gear Thrust Washer Pin"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Bearing Shaft Snap Ring",
+            "assembly": "Reverse Gear Stage",
+            "blocked_by": [
+                "Synchronizer Ring Set No.1 (Inner)"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Clutch Hub Set Shaft Snap Ring",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Input Shaft Bearing"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter 5th Gear",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Counter 5th Gear Bearing"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Counter 5th Gear Bearing",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "5th Gear Thrust Washer"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Gear",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Counter Gear Front Bearing or Roller"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Counter Gear Front Bearing or Roller",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Counter Gear Front Bearing Snap Ring No.2"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Gear Front Bearing Snap Ring No.2",
+            "assembly": null,
+            "blocked_by": [
+                "Transmission Case"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Gear Front Bearing Snap Ring No.2",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Gear Front Bearing",
+            "assembly": null,
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Gear Rear Shaft Snap Ring",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Gear Spline Piece No.5"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Counter Shaft Center Bearing",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Intermediate Plate"
+            ],
+            "disassembly_tools": [
+                "Bearing Splitter",
+                "Hydraulic Press"
+            ]
+        },
+        {
+            "component": "Counter Shaft Hole",
+            "assembly": "Intermediate Plate",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Bearing Splitter",
+                "Hydraulic Press"
+            ]
+        },
+        {
+            "component": "Front Bearing Shaft Snap Ring",
+            "assembly": "Input Shaft Assembly",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Gear Spline Piece No",
+            "assembly": null,
+            "blocked_by": [
+                "Synchronizer Ring Outer No.3"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Gear Spline Piece No.5",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Synchronizer Ring Outer No.3"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Input Shaft",
+            "assembly": "Input Shaft Assembly",
+            "blocked_by": [
+                "Input Shaft Front Bearing"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Input Shaft Bearing",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Synchronizer Ring No.2 (Input)"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Input Shaft Front Bearing",
+            "assembly": "Input Shaft Assembly",
+            "blocked_by": [
+                "Front Bearing Shaft Snap Ring"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Input Shaft Hole",
+            "assembly": "Intermediate Plate",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Intermediate Plate",
+            "assembly": "Intermediate Plate Assembly",
+            "blocked_by": [
+                "Reverse Idler Gear Shaft",
+                "Input Shaft",
+                "Counter Gear"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Output Shaft",
+            "assembly": "Output Shaft Assembly",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Output Shaft Bearing Shaft Snap Ring (Big)",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing Retainer"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Output Shaft Bearing Shaft Snap Ring (Small)",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "5th Gear"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Output Shaft Center Bearing",
+            "assembly": "5th Gear Group",
+            "blocked_by": [
+                "1st Gear Thrust Washer"
+            ],
+            "disassembly_tools": [
+                "Flat Screwdriver 1",
+                "Flat Screwdriver 2",
+                "Hammer"
+            ]
+        },
+        {
+            "component": "Output Shaft Rear Bearing",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Bearing Shaft Snap Ring (Small)"
+            ],
+            "disassembly_tools": [
+                "Bearing Puller"
+            ]
+        },
+        {
+            "component": "Output Shaft Rear Bearing Retainer",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Spacer"
+            ],
+            "disassembly_tools": [
+                "Bearing Puller"
+            ]
+        },
+        {
+            "component": "Rear Retainer Bolt 1",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing Retainer"
+            ],
+            "disassembly_tools": [
+                "Cordless Drill",
+                "Rivet Gun"
+            ]
+        },
+        {
+            "component": "Rear Retainer Bolt 2",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing Retainer"
+            ],
+            "disassembly_tools": [
+                "Cordless Drill",
+                "Rivet Gun"
+            ]
+        },
+        {
+            "component": "Rear Retainer Bolt 3",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing Retainer"
+            ],
+            "disassembly_tools": [
+                "Cordless Drill",
+                "Rivet Gun"
+            ]
+        },
+        {
+            "component": "Rear Retainer Bolt 4",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing Retainer"
+            ],
+            "disassembly_tools": [
+                "Cordless Drill",
+                "Rivet Gun"
+            ]
+        },
+        {
+            "component": "Reverse Gear",
+            "assembly": "Reverse Gear Stage",
+            "blocked_by": [
+                "Bearing Shaft Snap Ring"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Reverse Idler Gear",
+            "assembly": "Reverse Idler Gear Assembly",
+            "blocked_by": [
+                "Reverse Idler Gear Shaft"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Reverse Idler Gear Shaft",
+            "assembly": "Reverse Idler Gear Assembly",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Reverse Idler Hole",
+            "assembly": "Intermediate Plate",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Spacer",
+            "assembly": "Rear Output Shaft Lock Set",
+            "blocked_by": [
+                "Output Shaft Rear Bearing"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 1",
+            "assembly": "Transmission Clutch Hub No.2 (Outer)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 1 (Outer)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 2",
+            "assembly": "Transmission Clutch Hub No.2 (Outer)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 2 (Outer)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 3",
+            "assembly": "Transmission Clutch Hub No.2 (Outer)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key 3 (Outer)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key Spring (Outer)",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Clutch Hub Set Shaft Snap Ring"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key Spring 1 (Inner)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [
+                "Transmission Clutch Hub No.2 (Inner)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key Spring 2 (Inner)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [
+                "Transmission Clutch Hub No.2 (Inner)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchromesh Shifting Key Spring 3 (Inner)",
+            "assembly": "Transmission Clutch Hub No.2 (Inner)",
+            "blocked_by": [
+                "Transmission Clutch Hub No.2 (Inner)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchronizer Ring No.2 (Output)",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Transmission Hub Sleeve No.2 "
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchronizer Ring Outer No.3",
+            "assembly": "Counter Gear Assembly",
+            "blocked_by": [
+                "Counter 5th Gear"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchronizer Ring Set No.1 (Inner)",
+            "assembly": "First Gear Stage",
+            "blocked_by": [
+                "1st Gear"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Synchronizer Ring Set No.1 (Outer)",
+            "assembly": "Second Gear Stage",
+            "blocked_by": [
+                "Transmission Clutch Hub No.2 (Inner)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Transmission Clutch Hub No.2 (Inner)",
+            "assembly": "Second Gear Stage",
+            "blocked_by": [
+                "Reverse Gear",
+                "Synchromesh Shifting Key 1 (Outer)",
+                "Synchromesh Shifting Key 2 (Outer)",
+                "Synchromesh Shifting Key 3 (Outer)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Transmission Clutch Hub No.2 (Outer)",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Synchromesh Shifting Key Spring (Outer)",
+                "Synchromesh Shifting Key 1",
+                "Synchromesh Shifting Key 2",
+                "Synchromesh Shifting Key 3"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        },
+        {
+            "component": "Transmission Hub Sleeve No.2 ",
+            "assembly": "Output Shaft Wrapped Components",
+            "blocked_by": [
+                "Synchromesh Shifting Key Spring (Inner)"
+            ],
+            "disassembly_tools": [
+                "Pull"
+            ]
+        }
+    ]
+}
