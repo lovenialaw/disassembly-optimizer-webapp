@@ -5,6 +5,20 @@
   background-color: white;
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
+}
+
+.knowledge-graph.neo4j-style {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border: 1px solid #e0e0e0;
+}
+
+.knowledge-graph.neo4j-style canvas {
+  cursor: grab;
+}
+
+.knowledge-graph.neo4j-style canvas:active {
+  cursor: grabbing;
 }
 
 .graph-placeholder {
