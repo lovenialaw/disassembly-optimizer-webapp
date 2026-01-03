@@ -11,7 +11,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   
   // useGLTF must be called unconditionally (React hooks rule)
   // It throws a promise that Suspense will catch for async loading
-  const { scene } = useGLTF(modelUrl);
+  const gltf = useGLTF(modelUrl);
+  const scene = gltf?.scene;
   
   const groupRef = useRef();
   const controlsRef = useRef();
@@ -24,9 +25,17 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
 
   useEffect(() => {
     if (scene) {
-      console.log('Model loaded successfully:', productId);
+      console.log('Model loaded successfully:', productId, scene);
+      // Log scene structure for debugging
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          console.log('Mesh found:', child.name, child);
+        }
+      });
+    } else {
+      console.warn('Scene is null or undefined for:', productId, 'GLTF result:', gltf);
     }
-  }, [scene, productId]);
+  }, [scene, productId, gltf]);
 
   // Store original materials on first load
   useEffect(() => {
@@ -260,20 +269,26 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
 
   if (!scene) {
-    return null; // Suspense will handle loading state
+    console.warn('No scene available, showing placeholder');
+    return (
+      <mesh>
+        <boxGeometry args={[2, 2, 2]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
+    );
   }
 
   return (
     <>
-      <primitive
+      <primitive 
         ref={groupRef}
-        object={scene}
-        scale={1}
-        position={[0, 0, 0]}
+        object={scene.clone()} 
+        scale={1} 
+        position={[0, 0, 0]} 
       />
-      <OrbitControls
+      <OrbitControls 
         ref={controlsRef}
-        enableDamping
+        enableDamping 
         dampingFactor={0.05}
         enabled={!isZoomingRef.current} // Disable manual controls while zooming
       />
