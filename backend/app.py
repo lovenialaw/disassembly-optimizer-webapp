@@ -220,7 +220,7 @@ def optimize_disassembly(product_id):
 
         # Get component properties from request
         component_properties = data.get('component_properties', {})
-        
+
         # Run optimization algorithm
         result = optimizer.optimize(
             product_id=product_id,
@@ -252,60 +252,64 @@ def get_product_parts(product_id):
             return jsonify(parts)
     return jsonify({'error': 'Product not found'}), 404
 
+
 @app.route('/api/products/<product_id>/paths/<target_part>', methods=['GET'])
 def get_disassembly_paths(product_id, target_part):
     """Get all valid disassembly paths and involved components/edges for a target part"""
     try:
         import networkx as nx
-        
+
         # Get graph data
         csv_path = os.path.join(CSV_DIR, f'{product_id}_graph.csv')
         if not os.path.exists(csv_path):
             return jsonify({'error': 'Graph data not found'}), 404
-        
+
         df = pd.read_csv(csv_path)
         df['from'] = df['from'].astype(str).str.strip()
         df['to'] = df['to'].astype(str).str.strip()
-        
+
         # Build topology graph
         G_topology = nx.DiGraph()
         for _, row in df.iterrows():
             G_topology.add_edge(row['from'], row['to'])
-        
+
         # Validate target
         if target_part not in G_topology.nodes:
             return jsonify({'error': f"Target '{target_part}' not found in graph"}), 400
-        
+
         # Find start nodes
-        start_nodes = [n for n in G_topology.nodes if G_topology.in_degree(n) == 0]
-        
+        start_nodes = [
+            n for n in G_topology.nodes if G_topology.in_degree(n) == 0]
+
         if not start_nodes:
             return jsonify({'error': 'No start nodes found'}), 400
-        
+
         # Enumerate all valid paths
         all_paths = []
         for start in start_nodes:
             try:
-                all_paths.extend(nx.all_simple_paths(G_topology, start, target_part))
+                all_paths.extend(nx.all_simple_paths(
+                    G_topology, start, target_part))
             except nx.NetworkXNoPath:
                 pass
-        
+
         if not all_paths:
             return jsonify({'error': 'No valid disassembly paths found'}), 400
-        
+
         # Extract components and edges involved in all paths
         components_in_paths = set()
         edges_in_paths = set()
-        
+
         for path in all_paths:
             components_in_paths.update(path)
             for i in range(len(path) - 1):
                 edges_in_paths.add((path[i], path[i + 1]))
-        
+
         # Return data based on product type
         if product_id == 'kettle':
             # For kettle: return edges that need properties
-            edges_list = [{'from': u, 'to': v} for u, v in sorted(edges_in_paths)]
+            edges_list = [{'from': u, 'to': v}
+                          for u, v in sorted(edges_in_paths)]
             return jsonify({
                 'paths': [[str(n) for n in path] for path in all_paths],
                 'edges': edges_list,
@@ -318,7 +322,7 @@ def get_disassembly_paths(product_id, target_part):
                 'components': sorted(list(components_in_paths)),
                 'edges': [{'from': u, 'to': v} for u, v in sorted(edges_in_paths)]
             })
-            
+
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()

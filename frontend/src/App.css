@@ -30,9 +30,14 @@
   border-right: 1px solid #e0e0e0;
   padding: 1.5rem;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.app-sidebar > * {
+  flex-shrink: 0;
 }
 
 .app-main {
@@ -79,6 +84,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.3s;
+  flex-shrink: 0;
 }
 
 .optimize-button:hover:not(:disabled) {
