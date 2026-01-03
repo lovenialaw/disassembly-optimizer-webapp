@@ -278,11 +278,35 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     );
   }
 
+  // Ensure scene is visible and properly positioned
+  useEffect(() => {
+    if (scene && groupRef.current) {
+      // Make sure scene is visible
+      scene.traverse((child) => {
+        child.visible = true;
+        if (child.isMesh) {
+          child.frustumCulled = false;
+        }
+      });
+      
+      // Calculate bounding box and center the model
+      const box = new THREE.Box3().setFromObject(scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      
+      console.log('Model bounds:', { center, size, maxDim });
+      
+      // Center the model
+      scene.position.sub(center);
+    }
+  }, [scene]);
+
   return (
     <>
       <primitive 
         ref={groupRef}
-        object={scene.clone()} 
+        object={scene} 
         scale={1} 
         position={[0, 0, 0]} 
       />
