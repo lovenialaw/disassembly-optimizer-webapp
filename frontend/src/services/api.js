@@ -34,5 +34,11 @@ export const getProductParts = async (productId) => {
   return response.data;
 };
 
+export const getValidPaths = async (productId, targetPart) => {
+  // Get valid paths for a target part - returns edges in those paths
+  const response = await api.post(`/products/${productId}/valid-paths`, { target_part: targetPart });
+  return response.data;
+};
+
 export default api;
 

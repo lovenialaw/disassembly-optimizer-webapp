@@ -265,15 +265,18 @@ class DisassemblyOptimizer:
                                      all_paths: List[List[str]],
                                      parameters: Dict[str, Any],
                                      component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> nx.DiGraph:
-        """Build weighted graph for kettle using CSV data or defaults"""
+        """
+        Build weighted graph for kettle - EXACTLY as in ALGORITHMS file
+        User provides properties for EACH EDGE (u→v) in valid paths
+        """
 
-        # Mapping dictionaries
+        # Mapping dictionaries - EXACT match to ALGORITHMS
         safety_map = {"Low": 1, "Medium": 2, "High": 3,
                       "low": 1, "medium": 2, "high": 3}
         fastener_map = {"Snap fit": 1, "Spring": 1.5, "Screws": 2, "Wires": 3,
                         "snap fit": 1, "spring": 1.5, "screws": 2, "wires": 3}
         tool_map = {"Hand": 1, "Pull": 1.5, "Philips screwdriver": 2, "Wire cutter": 3,
-                    "hand": 1, "pull": 1.5, "philips screwdriver": 2, "wire cutter": 2}
+                    "hand": 1, "pull": 1.5, "philips screwdriver": 2, "wire cutter": 3}
 
         def fastener_count_penalty(count):
             if pd.isna(count) or count == 0:
@@ -290,17 +293,40 @@ class DisassemblyOptimizer:
         G = nx.DiGraph()
         edge_weights = {}
 
-        # Use user-provided component properties or CSV data
+        # Collect unique edges from all valid paths (as in ALGORITHMS)
+        edges_in_paths = set()
+        for path in all_paths:
+            for i in range(len(path) - 1):
+                u, v = path[i], path[i + 1]
+                edges_in_paths.add((u, v))
+
+        # Build edge weights - EXACTLY as ALGORITHMS file
+        # component_properties should be edge-based: {"u->v": {safety, fastener, tool, fastener_count}}
         for _, row in edges_df.iterrows():
             u, v = row['from'], row['to']
+            edge_key = f"{u}->{v}"
             
-            # Check if user provided properties for target component (v)
-            if component_properties and v in component_properties:
-                user_props = component_properties[v]
+            # Check if user provided properties for this edge
+            if component_properties and edge_key in component_properties:
+                user_props = component_properties[edge_key]
                 safety_str = str(user_props.get('safety_risk', 'Medium')).strip()
                 fastener_str = str(user_props.get('fastener', 'Screws')).strip()
                 tool_str = str(user_props.get('tool', 'Hand')).strip()
                 fastener_count = user_props.get('fastener_count', 2)
+            elif (u, v) in edges_in_paths and component_properties:
+                # Try alternative format: component-based (backward compatibility)
+                if v in component_properties:
+                    user_props = component_properties[v]
+                    safety_str = str(user_props.get('safety_risk', 'Medium')).strip()
+                    fastener_str = str(user_props.get('fastener', 'Screws')).strip()
+                    tool_str = str(user_props.get('tool', 'Hand')).strip()
+                    fastener_count = user_props.get('fastener_count', 2)
+                else:
+                    # Use CSV defaults if available
+                    safety_str = str(row.get('safety_risk', 'Medium')).strip() if 'safety_risk' in edges_df.columns else 'Medium'
+                    fastener_str = str(row.get('fastener', 'Screws')).strip() if 'fastener' in edges_df.columns else 'Screws'
+                    tool_str = str(row.get('tool', 'Hand')).strip() if 'tool' in edges_df.columns else 'Hand'
+                    fastener_count = row.get('fastener_count', 2) if 'fastener_count' in edges_df.columns else 2
             elif 'safety_risk' in edges_df.columns:
                 # Use CSV data if available
                 safety_str = str(row.get('safety_risk', 'Medium')).strip()
@@ -308,7 +334,7 @@ class DisassemblyOptimizer:
                 tool_str = str(row.get('tool', 'Hand')).strip()
                 fastener_count = row.get('fastener_count', 2)
             else:
-                # Defaults
+                # Defaults for edges not in paths or not provided
                 safety_str = 'Medium'
                 fastener_str = 'Screws'
                 tool_str = 'Hand'
@@ -319,6 +345,7 @@ class DisassemblyOptimizer:
             tool = tool_map.get(tool_str, 1)
             count_penalty = fastener_count_penalty(fastener_count)
             
+            # EXACT formula from ALGORITHMS
             weight = safety + fastener + tool + count_penalty
             G.add_edge(u, v, weight=weight)
         else:
@@ -335,14 +362,17 @@ class DisassemblyOptimizer:
                                      all_paths: List[List[str]],
                                      parameters: Dict[str, Any],
                                      component_properties: Optional[Dict[str, Dict[str, Any]]] = None) -> nx.DiGraph:
-        """Build weighted graph for gearbox using component safety and rule-based costs"""
+        """
+        Build weighted graph for gearbox - EXACTLY as in ALGORITHMS file
+        User provides safety risk ONCE PER COMPONENT (not per edge)
+        Tool comes from CSV (disassembly_tools), fastener is rule-based
+        """
 
-        # Get component safety from parameters or use defaults
-        component_safety = parameters.get('component_safety', {})
+        # Default safety mapping - EXACT match to ALGORITHMS
+        safety_map = {"Low": 1, "Medium": 2, "High": 3,
+                      "low": 1, "medium": 2, "high": 3}
 
-        # Default safety if not provided
-        default_safety = {"Low": 1, "Medium": 2, "High": 3}
-
+        # Tool cost function - EXACT from ALGORITHMS
         def tool_cost(tools):
             if pd.isna(tools) or not tools:
                 return 1
@@ -353,6 +383,7 @@ class DisassemblyOptimizer:
                 return 2
             return 1
 
+        # Fastener cost function - EXACT from ALGORITHMS
         def fastener_count_cost(component_name):
             name = str(component_name).lower()
             if "bolt" in name or "screw" in name:
@@ -361,39 +392,38 @@ class DisassemblyOptimizer:
                 return 2
             return 1
 
-        # Build graph
+        # Collect all components in paths (as in ALGORITHMS)
+        components_in_paths = set()
+        for path in all_paths:
+            components_in_paths.update(path)
+
+        # Build component safety map from user input
+        component_safety = {}
+        if component_properties:
+            for comp in components_in_paths:
+                if comp in component_properties:
+                    safety_val = component_properties[comp].get('safety_risk', 'Medium')
+                    if isinstance(safety_val, str):
+                        component_safety[comp] = safety_map.get(safety_val, 2)
+                    else:
+                        component_safety[comp] = safety_val
+
+        # Build graph - EXACTLY as ALGORITHMS
         G = nx.DiGraph()
 
         for _, row in edges_df.iterrows():
             u, v = row['from'], row['to']
             
-            # Check if user provided properties for target component (v)
-            if component_properties and v in component_properties:
-                user_props = component_properties[v]
-                # Get safety from user input
-                safety_val = user_props.get('safety_risk', 'Medium')
-                if isinstance(safety_val, str):
-                    safety = default_safety.get(safety_val, 2)
-                else:
-                    safety = safety_val
-                
-                # Get tool from user input
-                user_tool = user_props.get('tool', '')
-                tool = tool_cost(user_tool if user_tool else None)
-            else:
-                # Use component_safety from parameters or defaults
-                safety_val = component_safety.get(v, 2)  # Default to Medium
-                if isinstance(safety_val, str):
-                    safety = default_safety.get(safety_val, 2)
-                else:
-                    safety = safety_val
-                
-                # Get tool cost from CSV or defaults
-                tool = tool_cost(row.get('disassembly_tools', None))
+            # Get safety for target component (v) - user input or default
+            safety = component_safety.get(v, 2)  # Default to Medium (2)
             
-            # Get fastener cost (rule-based, same for both)
+            # Get tool cost from CSV (disassembly_tools column) - rule-based
+            tool = tool_cost(row.get('disassembly_tools', None))
+            
+            # Get fastener cost - rule-based from component name
             fastener = fastener_count_cost(v)
             
+            # EXACT formula from ALGORITHMS
             weight = safety + tool + fastener
             G.add_edge(u, v, weight=weight)
 

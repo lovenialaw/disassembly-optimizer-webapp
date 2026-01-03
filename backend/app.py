@@ -186,11 +186,11 @@ def get_product_graph(product_id):
 
 @app.route('/api/products/<product_id>/optimize', methods=['POST'])
 def optimize_disassembly(product_id):
-    """Optimize disassembly path for selected parts"""
+    """Optimize disassembly path for selected parts - matches ALGORITHMS file exactly"""
     data = request.json
     target_parts = data.get('target_parts', [])
     parameters = data.get('parameters', {})
-    component_properties = data.get('component_properties', {})
+    component_properties = data.get('component_properties', {})  # Edge-based for kettle, component-based for gearbox
 
     try:
         # Validate input

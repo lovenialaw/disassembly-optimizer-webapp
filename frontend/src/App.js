@@ -6,9 +6,10 @@ import KnowledgeGraph from './components/KnowledgeGraph';
 import ParameterPanel from './components/ParameterPanel';
 import PartSelector from './components/PartSelector';
 import ComponentProperties from './components/ComponentProperties';
+import EdgeProperties from './components/EdgeProperties';
 import ResultsPanel from './components/ResultsPanel';
 import AnimationControls from './components/AnimationControls';
-import { getProducts, getProductMetadata, getProductGraph, optimizeDisassembly } from './services/api';
+import { getProducts, getProductMetadata, getProductGraph, optimizeDisassembly, getValidPaths } from './services/api';
 
 function App() {
   const [products, setProducts] = useState([]);
@@ -26,6 +27,8 @@ function App() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [currentAnimationStep, setCurrentAnimationStep] = useState(0);
   const [componentProperties, setComponentProperties] = useState({});
+  const [edgeProperties, setEdgeProperties] = useState({});
+  const [validPathEdges, setValidPathEdges] = useState([]);
 
   useEffect(() => {
     loadProducts();
@@ -76,6 +79,32 @@ function App() {
     }));
   };
 
+  const handleEdgePropertiesChange = (properties) => {
+    setEdgeProperties(properties);
+  };
+
+  const loadValidPaths = async (productId, targetPart) => {
+    if (productId === 'kettle' && targetPart) {
+      try {
+        const data = await getValidPaths(productId, targetPart);
+        setValidPathEdges(data.edges || []);
+      } catch (error) {
+        console.error('Error loading valid paths:', error);
+        setValidPathEdges([]);
+      }
+    } else {
+      setValidPathEdges([]);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedProduct === 'kettle' && selectedParts.length > 0) {
+      loadValidPaths(selectedProduct, selectedParts[0]);
+    } else {
+      setValidPathEdges([]);
+    }
+  }, [selectedProduct, selectedParts]);
+
   const handleOptimize = async () => {
     if (!selectedProduct || selectedParts.length === 0) {
       alert('Please select a product and a part to disassemble');
@@ -83,10 +112,13 @@ function App() {
     }
 
     try {
+      // For kettle, use edge properties; for gearbox, use component properties
+      const properties = selectedProduct === 'kettle' ? edgeProperties : componentProperties;
+      
       const result = await optimizeDisassembly(selectedProduct, {
         target_parts: selectedParts,
         parameters: parameters,
-        component_properties: componentProperties
+        component_properties: properties
       });
       setOptimizationResult(result);
       setCurrentAnimationStep(0);
@@ -120,11 +152,19 @@ function App() {
               
               {selectedParts.length > 0 && (
                 <>
-                  <ComponentProperties
-                    productId={selectedProduct}
-                    selectedPart={selectedParts[0]}
-                    onPropertiesChange={handleComponentPropertiesChange}
-                  />
+                  {selectedProduct === 'kettle' ? (
+                    <EdgeProperties
+                      productId={selectedProduct}
+                      edges={validPathEdges}
+                      onPropertiesChange={handleEdgePropertiesChange}
+                    />
+                  ) : (
+                    <ComponentProperties
+                      productId={selectedProduct}
+                      selectedPart={selectedParts[0]}
+                      onPropertiesChange={handleComponentPropertiesChange}
+                    />
+                  )}
                   
                   <ParameterPanel
                     parameters={parameters}

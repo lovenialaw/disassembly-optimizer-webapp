@@ -58,41 +58,41 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         nodeLabel={(node) => `${node.name || node.id}`}
         nodeCanvasObject={(node, ctx, globalScale) => {
           // Safety check: ensure node has valid coordinates
-          if (typeof node.x !== 'number' || typeof node.y !== 'number' || 
-              !isFinite(node.x) || !isFinite(node.y)) {
+          if (typeof node.x !== 'number' || typeof node.y !== 'number' ||
+            !isFinite(node.x) || !isFinite(node.y)) {
             return; // Skip rendering if coordinates are invalid
           }
-          
+
           const label = node.name || node.id;
           const fontSize = Math.max(11, 13 / Math.sqrt(globalScale));
           const nodeRadius = 22;
           const isSelected = selectedParts && selectedParts.includes(node.id);
           const isInPath = optimizationResult && optimizationResult.sequence && optimizationResult.sequence.includes(node.id);
-          
+
           // Draw main circle - simple solid color
           ctx.beginPath();
           ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
           ctx.fillStyle = getNodeColor(node);
           ctx.fill();
-          
+
           // Border - thicker for selected/path nodes
           ctx.strokeStyle = isSelected || isInPath ? '#FFFFFF' : '#34495E';
           ctx.lineWidth = isSelected || isInPath ? 3 / globalScale : 2 / globalScale;
           ctx.stroke();
-          
+
           // Draw text inside circle
           ctx.fillStyle = '#FFFFFF';
           ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          
+
           // Handle long labels - truncate if needed
           let displayLabel = label;
           const maxLength = Math.floor(nodeRadius * 2 / (fontSize * 0.55));
           if (label.length > maxLength) {
             displayLabel = label.substring(0, maxLength - 3) + '...';
           }
-          
+
           ctx.fillText(displayLabel, node.x, node.y);
         }}
         onNodeHover={(node) => {

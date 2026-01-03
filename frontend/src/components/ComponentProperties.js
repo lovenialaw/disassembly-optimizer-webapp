@@ -88,11 +88,14 @@ const ComponentProperties = ({ productId, selectedPart, onPropertiesChange }) =>
     );
   }
 
-  // Gearbox properties
+  // Gearbox properties - only safety risk (tool comes from CSV, fastener is rule-based)
   if (productId === 'gearbox') {
     return (
       <div className="component-properties">
-        <label>Component Properties for: <strong>{selectedPart}</strong></label>
+        <label>Component Safety Risk for: <strong>{selectedPart}</strong></label>
+        <p style={{ fontSize: '0.85rem', color: '#7f8c8d', marginBottom: '0.5rem' }}>
+          Tool cost comes from CSV data, fastener cost is rule-based from component name
+        </p>
         <div className="properties-inputs">
           <div className="property-input">
             <label>Safety Risk</label>
@@ -104,16 +107,6 @@ const ComponentProperties = ({ productId, selectedPart, onPropertiesChange }) =>
               <option value="Medium">Medium</option>
               <option value="High">High</option>
             </select>
-          </div>
-          
-          <div className="property-input">
-            <label>Tool</label>
-            <input
-              type="text"
-              value={properties.tool}
-              onChange={(e) => handleChange('tool', e.target.value)}
-              placeholder="e.g., Pull, Screwdriver, etc."
-            />
           </div>
         </div>
       </div>
