@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,17 +9,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     ? `${process.env.REACT_APP_API_URL}/products/${productId}/model`
     : `http://localhost:5000/api/products/${productId}/model`;
   
-  const [error, setError] = useState(null);
-  
-  // useGLTF with error handling
-  let scene = null;
-  try {
-    const gltfResult = useGLTF(modelUrl);
-    scene = gltfResult.scene;
-  } catch (err) {
-    console.error('Error loading GLTF model:', err);
-    setError(err.message || 'Failed to load 3D model');
-  }
+  // useGLTF must be called unconditionally (React hooks rule)
+  const { scene, error: gltfError } = useGLTF(modelUrl);
   
   const groupRef = useRef();
   const controlsRef = useRef();
@@ -32,15 +23,17 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
 
   useEffect(() => {
     if (scene) {
-      setError(null);
       console.log('Model loaded successfully:', productId);
     }
-  }, [scene, productId]);
+    if (gltfError) {
+      console.error('GLTF loading error:', gltfError);
+    }
+  }, [scene, gltfError, productId]);
 
   // Store original materials on first load
   useEffect(() => {
     if (!scene) return;
-    
+
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         const key = child.uuid;
@@ -101,21 +94,21 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         const meshName = (child.name || '').toLowerCase().trim();
-        
+
         // Check if this mesh should be highlighted
         let shouldHighlight = false;
-        
+
         if (highlightedParts.size > 0) {
           // Try to match mesh name with highlighted parts
           for (const highlightedPart of highlightedParts) {
             const highlightedLower = String(highlightedPart).toLowerCase();
-            
+
             // Direct name match
             if (meshName === highlightedLower || meshName.includes(highlightedLower) || highlightedLower.includes(meshName)) {
               shouldHighlight = true;
               break;
             }
-            
+
             // Match via component mapping
             if (componentNameMap.has(highlightedLower)) {
               const mappedName = componentNameMap.get(highlightedLower).toLowerCase();
@@ -129,7 +122,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
 
         const key = child.uuid;
         let stored = materialsRef.current.get(key);
-        
+
         // If we don't have stored material, store it now
         if (!stored) {
           const originalMaterial = child.material.clone();
@@ -139,7 +132,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
           });
           stored = materialsRef.current.get(key);
         }
-        
+
         if (shouldHighlight) {
           // Highlight part with bright green emissive
           if (!child.userData.isHighlighted) {
@@ -150,7 +143,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             // Make it brighter
             highlightMaterial.color.multiplyScalar(1.3);
             child.material = highlightMaterial;
-            
+
             // Store reference to highlighted mesh for camera zoom (only when animating)
             if (isAnimating) {
               highlightedMeshRef.current = child;
@@ -170,86 +163,86 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   // Function to zoom camera to a specific mesh
   const zoomToMesh = useCallback((mesh) => {
     if (!mesh || !camera || !controlsRef.current) return;
-    
+
     isZoomingRef.current = true;
-    
+
     // Calculate bounding box of the mesh
     const box = new THREE.Box3().setFromObject(mesh);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
-    
+
     // Calculate distance to fit the mesh in view
     const maxDim = Math.max(size.x, size.y, size.z);
     const distance = maxDim * 2.5; // Zoom factor
-    
+
     // Calculate camera position (offset from center)
     const direction = new THREE.Vector3(1, 1, 1).normalize();
     const targetPosition = center.clone().add(direction.multiplyScalar(distance));
-    
+
     // Store original camera position if not already stored
     if (!isAnimating || currentStep === 0) {
       originalCameraPosition.current = camera.position.clone();
     }
-    
+
     // Animate camera to target position
     const startPosition = camera.position.clone();
     const startTime = Date.now();
     const duration = 800; // Animation duration in ms
-    
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Easing function (ease-in-out)
-      const eased = progress < 0.5 
-        ? 2 * progress * progress 
+      const eased = progress < 0.5
+        ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      
+
       // Interpolate camera position
       camera.position.lerpVectors(startPosition, targetPosition, eased);
-      
+
       // Update controls target
       if (controlsRef.current) {
         controlsRef.current.target.lerp(center, eased);
         controlsRef.current.update();
       }
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
         isZoomingRef.current = false;
       }
     };
-    
+
     animate();
   }, [isAnimating, currentStep]);
 
   // Function to reset camera to original position
   const resetCamera = useCallback(() => {
     if (!camera || !controlsRef.current) return;
-    
+
     const startPosition = camera.position.clone();
     const startTarget = controlsRef.current.target.clone();
     const startTime = Date.now();
     const duration = 800;
-    
+
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
-      const eased = progress < 0.5 
-        ? 2 * progress * progress 
+
+      const eased = progress < 0.5
+        ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      
+
       camera.position.lerpVectors(startPosition, originalCameraPosition.current, eased);
       controlsRef.current.target.lerp(startTarget, new THREE.Vector3(0, 0, 0), eased);
       controlsRef.current.update();
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       }
     };
-    
+
     animate();
   }, [camera]);
 
@@ -260,7 +253,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
       const timer = setTimeout(() => {
         zoomToMesh(highlightedMeshRef.current);
       }, 200);
-      
+
       return () => clearTimeout(timer);
     } else if (!isAnimating && currentStep === 0) {
       // Reset camera when animation stops
@@ -268,14 +261,14 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     }
   }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
 
-  if (error || !scene) {
+  if (gltfError || !scene) {
     return (
       <group>
         <mesh>
           <boxGeometry args={[2, 2, 2]} />
-          <meshStandardMaterial color={error ? "red" : "gray"} />
+          <meshStandardMaterial color={gltfError ? "red" : "gray"} />
         </mesh>
-        {error && (
+        {gltfError && (
           <mesh position={[0, -1.5, 0]}>
             <planeGeometry args={[4, 1]} />
             <meshBasicMaterial color="black" transparent opacity={0.7} />
@@ -287,15 +280,15 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
 
   return (
     <>
-      <primitive 
+      <primitive
         ref={groupRef}
-        object={scene} 
-        scale={1} 
-        position={[0, 0, 0]} 
+        object={scene}
+        scale={1}
+        position={[0, 0, 0]}
       />
-      <OrbitControls 
+      <OrbitControls
         ref={controlsRef}
-        enableDamping 
+        enableDamping
         dampingFactor={0.05}
         enabled={!isZoomingRef.current} // Disable manual controls while zooming
       />
@@ -312,13 +305,20 @@ const ModelViewer = ({ productId, metadata, optimizationResult, isAnimating, cur
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <pointLight position={[-10, -10, -5]} intensity={0.5} />
-        <Model 
-          productId={productId}
-          metadata={metadata}
-          optimizationResult={optimizationResult}
-          isAnimating={isAnimating}
-          currentStep={currentStep}
-        />
+        <Suspense fallback={
+          <mesh>
+            <boxGeometry args={[1, 1, 1]} />
+            <meshStandardMaterial color="yellow" />
+          </mesh>
+        }>
+          <Model
+            productId={productId}
+            metadata={metadata}
+            optimizationResult={optimizationResult}
+            isAnimating={isAnimating}
+            currentStep={currentStep}
+          />
+        </Suspense>
         <gridHelper args={[10, 10]} />
       </Canvas>
     </div>
