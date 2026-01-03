@@ -26,10 +26,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     if (scene) {
       console.log('Model loaded successfully:', productId);
     }
-    if (gltfError) {
-      console.error('GLTF loading error:', gltfError);
-    }
-  }, [scene, gltfError, productId]);
+  }, [scene, productId]);
 
   // Store original materials on first load
   useEffect(() => {
@@ -262,21 +259,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     }
   }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
 
-  if (gltfError || !scene) {
-    return (
-      <group>
-        <mesh>
-          <boxGeometry args={[2, 2, 2]} />
-          <meshStandardMaterial color={gltfError ? "red" : "gray"} />
-        </mesh>
-        {gltfError && (
-          <mesh position={[0, -1.5, 0]}>
-            <planeGeometry args={[4, 1]} />
-            <meshBasicMaterial color="black" transparent opacity={0.7} />
-          </mesh>
-        )}
-      </group>
-    );
+  if (!scene) {
+    return null; // Suspense will handle loading state
   }
 
   return (
