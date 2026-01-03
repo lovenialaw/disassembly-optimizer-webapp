@@ -1,10 +1,14 @@
 import React from 'react';
 import './PartSelector.css';
 
-const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
+const PartSelector = ({ parts, selectedPart, onSelectPart }) => {
   const handleSelectPart = (partId) => {
-    // Single selection - replace array with single item
-    onSelectParts([partId]);
+    // Single selection - set or clear
+    if (selectedPart === partId) {
+      onSelectPart(null); // Deselect if clicking same part
+    } else {
+      onSelectPart(partId); // Select new part
+    }
   };
 
   if (!parts || parts.length === 0) {
@@ -17,9 +21,6 @@ const PartSelector = ({ parts, selectedParts, onSelectParts }) => {
       </div>
     );
   }
-
-  // Get selected part (first item in array)
-  const selectedPart = selectedParts && selectedParts.length > 0 ? selectedParts[0] : null;
 
   return (
     <div className="part-selector">

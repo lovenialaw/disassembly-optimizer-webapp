@@ -27,8 +27,7 @@
   gap: 0.5rem;
 }
 
-.part-item input[type="radio"],
-.part-item input[type="checkbox"] {
+.part-item input[type="radio"] {
   cursor: pointer;
 }
 
@@ -36,5 +35,6 @@
   cursor: pointer;
   font-size: 0.9rem;
   color: #34495e;
+  flex: 1;
 }
 
