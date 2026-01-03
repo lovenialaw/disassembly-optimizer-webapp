@@ -386,6 +386,13 @@ class DisassemblyOptimizer:
         # Build graph
         G = nx.DiGraph()
 
+        # Get component tools from component_properties if provided
+        component_tools = {}
+        if component_properties:
+            for comp_name, props in component_properties.items():
+                if isinstance(props, dict) and 'disassembly_tools' in props:
+                    component_tools[comp_name] = props['disassembly_tools']
+
         for _, row in edges_df.iterrows():
             u, v = row['from'], row['to']
 
@@ -396,21 +403,13 @@ class DisassemblyOptimizer:
             else:
                 safety = safety_val
 
-            # Get tool cost - use component_properties if available, otherwise use CSV or rule-based
-            tool = 1  # Default
-            if component_properties and v in component_properties:
-                comp_props = component_properties[v]
-                if isinstance(comp_props, dict) and 'disassembly_tool' in comp_props:
-                    # Use user-selected tool
-                    tool_str = str(comp_props['disassembly_tool']).lower()
-                    tool = tool_cost(tool_str)
-                elif isinstance(comp_props, dict) and 'tool' in comp_props:
-                    # Alternative key name
-                    tool_str = str(comp_props['tool']).lower()
-                    tool = tool_cost(tool_str)
+            # Get tool cost - prefer user input, then CSV, then default
+            tool_str = None
+            if component_tools and v in component_tools:
+                tool_str = component_tools[v]
             else:
-                # Fallback to CSV data or rule-based
-                tool = tool_cost(row.get('disassembly_tools', None))
+                tool_str = row.get('disassembly_tools', None)
+            tool = tool_cost(tool_str)
 
             # Get fastener cost
             fastener = fastener_count_cost(v)

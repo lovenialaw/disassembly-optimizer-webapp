@@ -107,21 +107,7 @@ def get_product_model(product_id):
         return send_file(gltf_path, mimetype='model/gltf+json')
     elif os.path.exists(glb_path):
         return send_file(glb_path, mimetype='model/gltf-binary')
-
-    # Return helpful error message
-    available_files = []
-    if os.path.exists(GLTF_DIR):
-        try:
-            available_files = [f for f in os.listdir(
-                GLTF_DIR) if f.endswith(('.gltf', '.glb'))]
-        except OSError:
-            pass
-
-    return jsonify({
-        'error': f'Model not found for product: {product_id}',
-        'searched_paths': [gltf_path, glb_path],
-        'available_files': available_files[:10]  # First 10 for debugging
-    }), 404
+    return jsonify({'error': 'Model not found'}), 404
 
 
 @app.route('/api/products/<product_id>/model/<filename>', methods=['GET'])
@@ -267,15 +253,11 @@ def get_product_parts(product_id):
     return jsonify({'error': 'Product not found'}), 404
 
 
-@app.route('/api/products/<product_id>/paths/<path:target_part>', methods=['GET'])
+@app.route('/api/products/<product_id>/paths/<target_part>', methods=['GET'])
 def get_disassembly_paths(product_id, target_part):
     """Get all valid disassembly paths and involved components/edges for a target part"""
     try:
         import networkx as nx
-        from urllib.parse import unquote
-
-        # URL decode the target part (Flask path converter should handle this, but be safe)
-        target_part = unquote(target_part).strip()
 
         # Get graph data
         csv_path = os.path.join(CSV_DIR, f'{product_id}_graph.csv')
@@ -291,39 +273,9 @@ def get_disassembly_paths(product_id, target_part):
         for _, row in df.iterrows():
             G_topology.add_edge(row['from'], row['to'])
 
-        # Try to find the target - first exact match, then try partial matching
-        target_node = None
-        if target_part in G_topology.nodes:
-            target_node = target_part
-        else:
-            # Try to find by partial match (in case of formatting differences)
-            for node in G_topology.nodes:
-                # Remove common suffixes/prefixes and compare
-                node_clean = str(node).strip()
-                target_clean = target_part.strip()
-
-                # Exact match after cleaning
-                if node_clean == target_clean:
-                    target_node = node
-                    break
-                # Check if one contains the other (for cases like "Component:1" vs "Component")
-                elif target_clean in node_clean or node_clean in target_clean:
-                    target_node = node
-                    break
-                # Try removing colon and numbers at the end
-                elif node_clean.split(':')[0].strip() == target_clean.split(':')[0].strip():
-                    target_node = node
-                    break
-
-        if not target_node:
-            # Return available nodes for debugging
-            available_nodes = sorted(list(G_topology.nodes))[
-                :10]  # First 10 for debugging
-            return jsonify({
-                'error': f"Target '{target_part}' not found in graph",
-                'available_nodes_sample': available_nodes,
-                'total_nodes': len(G_topology.nodes)
-            }), 400
+        # Validate target
+        if target_part not in G_topology.nodes:
+            return jsonify({'error': f"Target '{target_part}' not found in graph"}), 400
 
         # Find start nodes
         start_nodes = [
@@ -337,7 +289,7 @@ def get_disassembly_paths(product_id, target_part):
         for start in start_nodes:
             try:
                 all_paths.extend(nx.all_simple_paths(
-                    G_topology, start, target_node))
+                    G_topology, start, target_part))
             except nx.NetworkXNoPath:
                 pass
 

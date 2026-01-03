@@ -28,17 +28,17 @@ const ComponentPropertiesPanel = ({
           };
         });
       }
-    } else {
-      // For gearbox: safety risk and tool for each component
-      if (pathsData.components) {
-        pathsData.components.forEach(comp => {
-          initialProperties[comp] = {
-            safety_risk: 'Medium',
-            disassembly_tool: 'Hand'
-          };
-        });
-      }
-    }
+        } else {
+          // For gearbox: safety risk and tools for each component
+          if (pathsData.components) {
+            pathsData.components.forEach(comp => {
+              initialProperties[comp] = {
+                safety_risk: 'Medium',
+                disassembly_tools: 'Hand'
+              };
+            });
+          }
+        }
     
     setProperties(initialProperties);
     onPropertiesChange(initialProperties);
@@ -159,17 +159,16 @@ const ComponentPropertiesPanel = ({
                       </select>
                     </div>
                     <div className="property-input">
-                      <label>Disassembly Tool</label>
+                      <label>Disassembly Tools</label>
                       <select
-                        value={compProps.disassembly_tool || 'Hand'}
-                        onChange={(e) => handlePropertyChange(comp, 'disassembly_tool', e.target.value)}
+                        value={compProps.disassembly_tools || 'Hand'}
+                        onChange={(e) => handlePropertyChange(comp, 'disassembly_tools', e.target.value)}
                       >
                         <option value="Hand">Hand</option>
                         <option value="Pull">Pull</option>
                         <option value="Screwdriver">Screwdriver</option>
-                        <option value="Wrench">Wrench</option>
-                        <option value="Pliers">Pliers</option>
-                        <option value="Snap ring pliers">Snap ring pliers</option>
+                        <option value="Philips screwdriver">Philips screwdriver</option>
+                        <option value="Wire cutter">Wire cutter</option>
                       </select>
                     </div>
                   </div>

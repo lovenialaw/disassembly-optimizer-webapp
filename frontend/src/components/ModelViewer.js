@@ -1,41 +1,17 @@
-import React, { useRef, useEffect, useState, useCallback, Suspense } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import React, { useRef, useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import './ModelViewer.css';
 
 function Model({ productId, metadata, optimizationResult, isAnimating, currentStep }) {
-  const modelUrl = process.env.REACT_APP_API_URL 
+  const modelUrl = process.env.REACT_APP_API_URL
     ? `${process.env.REACT_APP_API_URL}/products/${productId}/model`
     : `http://localhost:5000/api/products/${productId}/model`;
-  
-  // useGLTF must be called unconditionally (React hooks rule)
-  // It throws a promise that Suspense will catch for async loading
-  const gltf = useGLTF(modelUrl);
-  const scene = gltf?.scene;
-  
+  const { scene } = useGLTF(modelUrl);
   const groupRef = useRef();
-  const controlsRef = useRef();
-  const { camera } = useThree();
   const [highlightedParts, setHighlightedParts] = useState(new Set());
   const materialsRef = useRef(new Map());
-  const highlightedMeshRef = useRef(null);
-  const originalCameraPosition = useRef(new THREE.Vector3(5, 5, 5));
-  const isZoomingRef = useRef(false);
-
-  useEffect(() => {
-    if (scene) {
-      console.log('Model loaded successfully:', productId, scene);
-      // Log scene structure for debugging
-      scene.traverse((child) => {
-        if (child.isMesh) {
-          console.log('Mesh found:', child.name, child);
-        }
-      });
-    } else {
-      console.warn('Scene is null or undefined for:', productId, 'GLTF result:', gltf);
-    }
-  }, [scene, productId, gltf]);
 
   // Store original materials on first load
   useEffect(() => {
@@ -66,13 +42,16 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
       const step = optimizationResult.animation_steps[currentStep];
       if (step && step.part_id) {
         // Highlight the current part being disassembled
-        setHighlightedParts(new Set([step.part_id]));
+        const partId = String(step.part_id).trim();
+        console.log('Setting highlighted part for animation:', partId, 'Step:', currentStep + 1);
+        setHighlightedParts(new Set([partId]));
       } else {
+        console.log('No part_id in step:', step);
         setHighlightedParts(new Set());
       }
     } else if (!isAnimating && optimizationResult.sequence) {
       // When not animating, show all parts in sequence
-      setHighlightedParts(new Set(optimizationResult.sequence));
+      setHighlightedParts(new Set(optimizationResult.sequence.map(p => String(p).trim())));
     } else {
       setHighlightedParts(new Set());
     }
@@ -80,7 +59,10 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
 
   // Apply highlighting to meshes
   useEffect(() => {
-    if (!scene || !metadata) return;
+    if (!scene) {
+      console.log('No scene available for highlighting');
+      return;
+    }
 
     // Create a mapping from component names to possible mesh names
     const componentNameMap = new Map();
@@ -89,40 +71,70 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
         const compId = comp.id || comp.name || comp.component;
         const compName = comp.name || comp.component || comp.id;
         // Add variations of the name for matching
-        componentNameMap.set(compId.toLowerCase(), compName);
-        componentNameMap.set(compName.toLowerCase(), compName);
+        const compIdLower = String(compId).toLowerCase().trim();
+        const compNameLower = String(compName).toLowerCase().trim();
+        componentNameMap.set(compIdLower, compName);
+        componentNameMap.set(compNameLower, compName);
         if (comp.component) {
-          componentNameMap.set(comp.component.toLowerCase(), comp.component);
+          componentNameMap.set(String(comp.component).toLowerCase().trim(), comp.component);
         }
       });
     }
 
+    let highlightedCount = 0;
+    let totalMeshes = 0;
+
     // Traverse scene and apply highlighting
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
+        totalMeshes++;
         const meshName = (child.name || '').toLowerCase().trim();
 
         // Check if this mesh should be highlighted
         let shouldHighlight = false;
+        let matchReason = '';
 
         if (highlightedParts.size > 0) {
           // Try to match mesh name with highlighted parts
           for (const highlightedPart of highlightedParts) {
-            const highlightedLower = String(highlightedPart).toLowerCase();
+            const highlightedLower = String(highlightedPart).toLowerCase().trim();
 
-            // Direct name match
-            if (meshName === highlightedLower || meshName.includes(highlightedLower) || highlightedLower.includes(meshName)) {
+            // Direct exact match
+            if (meshName === highlightedLower) {
               shouldHighlight = true;
+              matchReason = 'exact';
+              break;
+            }
+
+            // Partial match (contains)
+            if (meshName && highlightedLower && 
+                (meshName.includes(highlightedLower) || highlightedLower.includes(meshName))) {
+              shouldHighlight = true;
+              matchReason = 'partial';
               break;
             }
 
             // Match via component mapping
             if (componentNameMap.has(highlightedLower)) {
-              const mappedName = componentNameMap.get(highlightedLower).toLowerCase();
-              if (meshName === mappedName || meshName.includes(mappedName) || mappedName.includes(meshName)) {
+              const mappedName = componentNameMap.get(highlightedLower).toLowerCase().trim();
+              if (meshName === mappedName || 
+                  (meshName && mappedName && (meshName.includes(mappedName) || mappedName.includes(meshName)))) {
                 shouldHighlight = true;
+                matchReason = 'mapped';
                 break;
               }
+            }
+
+            // Try matching without spaces/special characters
+            const meshNameClean = meshName.replace(/[^a-z0-9]/g, '');
+            const highlightedClean = highlightedLower.replace(/[^a-z0-9]/g, '');
+            if (meshNameClean && highlightedClean && 
+                (meshNameClean === highlightedClean || 
+                 meshNameClean.includes(highlightedClean) || 
+                 highlightedClean.includes(meshNameClean))) {
+              shouldHighlight = true;
+              matchReason = 'cleaned';
+              break;
             }
           }
         }
@@ -141,6 +153,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
         }
 
         if (shouldHighlight) {
+          highlightedCount++;
           // Highlight part with bright green emissive
           if (!child.userData.isHighlighted) {
             child.userData.isHighlighted = true;
@@ -150,11 +163,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             // Make it brighter
             highlightMaterial.color.multiplyScalar(1.3);
             child.material = highlightMaterial;
-
-            // Store reference to highlighted mesh for camera zoom (only when animating)
-            if (isAnimating) {
-              highlightedMeshRef.current = child;
-            }
+            console.log(`Highlighted mesh: "${child.name}" (matched via ${matchReason})`);
           }
         } else {
           // Reset to original material
@@ -165,158 +174,27 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
         }
       }
     });
+
+    console.log(`Highlighting complete: ${highlightedCount} meshes highlighted out of ${totalMeshes} total meshes`);
+    console.log('Looking for parts:', Array.from(highlightedParts));
   }, [scene, highlightedParts, metadata, optimizationResult, currentStep]);
 
-  // Function to zoom camera to a specific mesh
-  const zoomToMesh = useCallback((mesh) => {
-    if (!mesh || !camera || !controlsRef.current) return;
-
-    isZoomingRef.current = true;
-
-    // Calculate bounding box of the mesh
-    const box = new THREE.Box3().setFromObject(mesh);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-
-    // Calculate distance to fit the mesh in view
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const distance = maxDim * 2.5; // Zoom factor
-
-    // Calculate camera position (offset from center)
-    const direction = new THREE.Vector3(1, 1, 1).normalize();
-    const targetPosition = center.clone().add(direction.multiplyScalar(distance));
-
-    // Store original camera position if not already stored
-    if (!isAnimating || currentStep === 0) {
-      originalCameraPosition.current = camera.position.clone();
-    }
-
-    // Animate camera to target position
-    const startPosition = camera.position.clone();
-    const startTime = Date.now();
-    const duration = 800; // Animation duration in ms
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Easing function (ease-in-out)
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-      // Interpolate camera position
-      camera.position.lerpVectors(startPosition, targetPosition, eased);
-
-      // Update controls target
-      if (controlsRef.current) {
-        controlsRef.current.target.lerp(center, eased);
-        controlsRef.current.update();
-      }
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        isZoomingRef.current = false;
-      }
-    };
-
-    animate();
-  }, [isAnimating, currentStep]);
-
-  // Function to reset camera to original position
-  const resetCamera = useCallback(() => {
-    if (!camera || !controlsRef.current) return;
-
-    const startPosition = camera.position.clone();
-    const startTarget = controlsRef.current.target.clone();
-    const startTime = Date.now();
-    const duration = 800;
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-      camera.position.lerpVectors(startPosition, originalCameraPosition.current, eased);
-      controlsRef.current.target.lerp(startTarget, new THREE.Vector3(0, 0, 0), eased);
-      controlsRef.current.update();
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    animate();
-  }, [camera]);
-
-  // Zoom to highlighted component when animating or step changes
+  // Debug logging
   useEffect(() => {
-    if (isAnimating && highlightedMeshRef.current) {
-      // Small delay to ensure highlighting is applied first
-      const timer = setTimeout(() => {
-        zoomToMesh(highlightedMeshRef.current);
-      }, 200);
-
-      return () => clearTimeout(timer);
-    } else if (!isAnimating && currentStep === 0) {
-      // Reset camera when animation stops
-      resetCamera();
+    if (highlightedParts.size > 0) {
+      console.log('Highlighting parts:', Array.from(highlightedParts));
+      console.log('Current step:', currentStep);
+      console.log('Is animating:', isAnimating);
     }
-  }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
-
-  // Ensure scene is visible and properly positioned (must be before early return)
-  useEffect(() => {
-    if (scene && groupRef.current) {
-      // Make sure scene is visible
-      scene.traverse((child) => {
-        child.visible = true;
-        if (child.isMesh) {
-          child.frustumCulled = false;
-        }
-      });
-      
-      // Calculate bounding box and center the model
-      const box = new THREE.Box3().setFromObject(scene);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      
-      console.log('Model bounds:', { center, size, maxDim });
-      
-      // Center the model
-      scene.position.sub(center);
-    }
-  }, [scene]);
-
-  if (!scene) {
-    console.warn('No scene available, showing placeholder');
-    return (
-      <mesh>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
-    );
-  }
+  }, [highlightedParts, currentStep, isAnimating]);
 
   return (
-    <>
-      <primitive 
-        ref={groupRef}
-        object={scene} 
-        scale={1} 
-        position={[0, 0, 0]} 
-      />
-      <OrbitControls 
-        ref={controlsRef}
-        enableDamping 
-        dampingFactor={0.05}
-        enabled={!isZoomingRef.current} // Disable manual controls while zooming
-      />
-    </>
+    <primitive
+      ref={groupRef}
+      object={scene}
+      scale={1}
+      position={[0, 0, 0]}
+    />
   );
 }
 
@@ -329,20 +207,14 @@ const ModelViewer = ({ productId, metadata, optimizationResult, isAnimating, cur
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <pointLight position={[-10, -10, -5]} intensity={0.5} />
-        <Suspense fallback={
-          <mesh>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color="yellow" />
-          </mesh>
-        }>
-          <Model
-            productId={productId}
-            metadata={metadata}
-            optimizationResult={optimizationResult}
-            isAnimating={isAnimating}
-            currentStep={currentStep}
-          />
-        </Suspense>
+        <Model
+          productId={productId}
+          metadata={metadata}
+          optimizationResult={optimizationResult}
+          isAnimating={isAnimating}
+          currentStep={currentStep}
+        />
+        <OrbitControls enableDamping dampingFactor={0.05} />
         <gridHelper args={[10, 10]} />
       </Canvas>
     </div>
