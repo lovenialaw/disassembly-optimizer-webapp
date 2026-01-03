@@ -268,17 +268,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     }
   }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
 
-  if (!scene) {
-    console.warn('No scene available, showing placeholder');
-    return (
-      <mesh>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
-    );
-  }
-
-  // Ensure scene is visible and properly positioned
+  // Ensure scene is visible and properly positioned (must be before early return)
   useEffect(() => {
     if (scene && groupRef.current) {
       // Make sure scene is visible
@@ -301,6 +291,16 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
       scene.position.sub(center);
     }
   }, [scene]);
+
+  if (!scene) {
+    console.warn('No scene available, showing placeholder');
+    return (
+      <mesh>
+        <boxGeometry args={[2, 2, 2]} />
+        <meshStandardMaterial color="orange" />
+      </mesh>
+    );
+  }
 
   return (
     <>
