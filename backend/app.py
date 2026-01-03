@@ -107,7 +107,20 @@ def get_product_model(product_id):
         return send_file(gltf_path, mimetype='model/gltf+json')
     elif os.path.exists(glb_path):
         return send_file(glb_path, mimetype='model/gltf-binary')
-    return jsonify({'error': 'Model not found'}), 404
+    
+    # Return helpful error message
+    available_files = []
+    if os.path.exists(GLTF_DIR):
+        try:
+            available_files = [f for f in os.listdir(GLTF_DIR) if f.endswith(('.gltf', '.glb'))]
+        except OSError:
+            pass
+    
+    return jsonify({
+        'error': f'Model not found for product: {product_id}',
+        'searched_paths': [gltf_path, glb_path],
+        'available_files': available_files[:10]  # First 10 for debugging
+    }), 404
 
 
 @app.route('/api/products/<product_id>/model/<filename>', methods=['GET'])
