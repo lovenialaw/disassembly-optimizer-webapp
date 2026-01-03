@@ -287,7 +287,7 @@ def get_disassembly_paths(product_id, target_part):
                 # Remove common suffixes/prefixes and compare
                 node_clean = str(node).strip()
                 target_clean = target_part.strip()
-                
+
                 # Exact match after cleaning
                 if node_clean == target_clean:
                     target_node = node
@@ -300,10 +300,11 @@ def get_disassembly_paths(product_id, target_part):
                 elif node_clean.split(':')[0].strip() == target_clean.split(':')[0].strip():
                     target_node = node
                     break
-        
+
         if not target_node:
             # Return available nodes for debugging
-            available_nodes = sorted(list(G_topology.nodes))[:10]  # First 10 for debugging
+            available_nodes = sorted(list(G_topology.nodes))[
+                :10]  # First 10 for debugging
             return jsonify({
                 'error': f"Target '{target_part}' not found in graph",
                 'available_nodes_sample': available_nodes,

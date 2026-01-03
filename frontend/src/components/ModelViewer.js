@@ -1,14 +1,36 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, Suspense } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import './ModelViewer.css';
 
-function Model({ productId, metadata, optimizationResult, isAnimating, currentStep }) {
+function Model({ productId, metadata, optimizationResult, isAnimating, currentStep, onError }) {
   const modelUrl = process.env.REACT_APP_API_URL 
     ? `${process.env.REACT_APP_API_URL}/products/${productId}/model`
     : `http://localhost:5000/api/products/${productId}/model`;
-  const { scene } = useGLTF(modelUrl);
+  
+  const [error, setError] = useState(null);
+  
+  // useGLTF hook - this will throw if model fails to load
+  let scene = null;
+  try {
+    const gltfResult = useGLTF(modelUrl);
+    scene = gltfResult.scene;
+  } catch (err) {
+    console.error('Error loading 3D model:', err, 'URL:', modelUrl);
+    const errorMsg = err.message || 'Failed to load 3D model';
+    setError(errorMsg);
+    if (onError) {
+      onError(errorMsg);
+    }
+  }
+  
+  useEffect(() => {
+    if (error && onError) {
+      onError(error);
+    }
+  }, [error, onError]);
+  
   const groupRef = useRef();
   const controlsRef = useRef();
   const { camera } = useThree();
