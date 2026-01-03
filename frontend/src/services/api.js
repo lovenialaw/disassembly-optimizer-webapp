@@ -35,7 +35,9 @@ export const getProductParts = async (productId) => {
 };
 
 export const getDisassemblyPaths = async (productId, targetPart) => {
-  const response = await api.get(`/products/${productId}/paths/${targetPart}`);
+  // Properly encode the target part to handle special characters like colons
+  const encodedPart = encodeURIComponent(targetPart);
+  const response = await api.get(`/products/${productId}/paths/${encodedPart}`);
   return response.data;
 };
 
