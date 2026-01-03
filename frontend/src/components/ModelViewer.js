@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import './ModelViewer.css';
@@ -10,8 +10,13 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     : `http://localhost:5000/api/products/${productId}/model`;
   const { scene } = useGLTF(modelUrl);
   const groupRef = useRef();
+  const controlsRef = useRef();
+  const { camera } = useThree();
   const [highlightedParts, setHighlightedParts] = useState(new Set());
   const materialsRef = useRef(new Map());
+  const highlightedMeshRef = useRef(null);
+  const originalCameraPosition = useRef(new THREE.Vector3(5, 5, 5));
+  const isZoomingRef = useRef(false);
 
   // Store original materials on first load
   useEffect(() => {
@@ -126,6 +131,11 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             // Make it brighter
             highlightMaterial.color.multiplyScalar(1.3);
             child.material = highlightMaterial;
+            
+            // Store reference to highlighted mesh for camera zoom (only when animating)
+            if (isAnimating) {
+              highlightedMeshRef.current = child;
+            }
           }
         } else {
           // Reset to original material
@@ -138,22 +148,122 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     });
   }, [scene, highlightedParts, metadata, optimizationResult, currentStep]);
 
-  // Debug logging
-  useEffect(() => {
-    if (highlightedParts.size > 0) {
-      console.log('Highlighting parts:', Array.from(highlightedParts));
-      console.log('Current step:', currentStep);
-      console.log('Is animating:', isAnimating);
+  // Function to zoom camera to a specific mesh
+  const zoomToMesh = (mesh) => {
+    if (!mesh || !camera || !controlsRef.current) return;
+    
+    isZoomingRef.current = true;
+    
+    // Calculate bounding box of the mesh
+    const box = new THREE.Box3().setFromObject(mesh);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Calculate distance to fit the mesh in view
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const distance = maxDim * 2.5; // Zoom factor
+    
+    // Calculate camera position (offset from center)
+    const direction = new THREE.Vector3(1, 1, 1).normalize();
+    const targetPosition = center.clone().add(direction.multiplyScalar(distance));
+    
+    // Store original camera position if not already stored
+    if (!isAnimating || currentStep === 0) {
+      originalCameraPosition.current = camera.position.clone();
     }
-  }, [highlightedParts, currentStep, isAnimating]);
+    
+    // Animate camera to target position
+    const startPosition = camera.position.clone();
+    const startTime = Date.now();
+    const duration = 800; // Animation duration in ms
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Easing function (ease-in-out)
+      const eased = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // Interpolate camera position
+      camera.position.lerpVectors(startPosition, targetPosition, eased);
+      
+      // Update controls target
+      if (controlsRef.current) {
+        controlsRef.current.target.lerp(center, eased);
+        controlsRef.current.update();
+      }
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        isZoomingRef.current = false;
+      }
+    };
+    
+    animate();
+  }, [camera, isAnimating, currentStep]);
+
+  // Function to reset camera to original position
+  const resetCamera = useCallback(() => {
+    if (!camera || !controlsRef.current) return;
+    
+    const startPosition = camera.position.clone();
+    const startTarget = controlsRef.current.target.clone();
+    const startTime = Date.now();
+    const duration = 800;
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const eased = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      camera.position.lerpVectors(startPosition, originalCameraPosition.current, eased);
+      controlsRef.current.target.lerp(startTarget, new THREE.Vector3(0, 0, 0), eased);
+      controlsRef.current.update();
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
+  }, [camera]);
+
+  // Zoom to highlighted component when animating or step changes
+  useEffect(() => {
+    if (isAnimating && highlightedMeshRef.current) {
+      // Small delay to ensure highlighting is applied first
+      const timer = setTimeout(() => {
+        zoomToMesh(highlightedMeshRef.current);
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    } else if (!isAnimating && currentStep === 0) {
+      // Reset camera when animation stops
+      resetCamera();
+    }
+  }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
 
   return (
-    <primitive 
-      ref={groupRef}
-      object={scene} 
-      scale={1} 
-      position={[0, 0, 0]} 
-    />
+    <>
+      <primitive 
+        ref={groupRef}
+        object={scene} 
+        scale={1} 
+        position={[0, 0, 0]} 
+      />
+      <OrbitControls 
+        ref={controlsRef}
+        enableDamping 
+        dampingFactor={0.05}
+        enabled={!isZoomingRef.current} // Disable manual controls while zooming
+      />
+    </>
   );
 }
 
@@ -173,7 +283,6 @@ const ModelViewer = ({ productId, metadata, optimizationResult, isAnimating, cur
           isAnimating={isAnimating}
           currentStep={currentStep}
         />
-        <OrbitControls enableDamping dampingFactor={0.05} />
         <gridHelper args={[10, 10]} />
       </Canvas>
     </div>
