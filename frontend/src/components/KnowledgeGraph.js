@@ -56,9 +56,6 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         nodeColor={getNodeColor}
         nodeRelSize={0}
         nodeLabel={(node) => `${node.name || node.id}`}
-        enableNodeDrag={true}
-        enablePanInteraction={true}
-        enableZoomInteraction={true}
         nodeCanvasObject={(node, ctx, globalScale) => {
           // Safety check: ensure node has valid coordinates
           if (typeof node.x !== 'number' || typeof node.y !== 'number' || 
@@ -101,8 +98,13 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         onNodeHover={(node) => {
           setHoveredNode(node || null);
         }}
+        onNodeDragStart={(node) => {
+          // Start dragging - temporarily fix position
+          node.fx = node.x;
+          node.fy = node.y;
+        }}
         onNodeDrag={(node) => {
-          // Fix node position while dragging
+          // Update position while dragging
           node.fx = node.x;
           node.fy = node.y;
         }}
@@ -111,15 +113,10 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
           node.fx = node.x;
           node.fy = node.y;
         }}
-        onNodeClick={(node) => {
-          // Toggle fixed position on click
-          if (node.fx !== undefined && node.fx !== null) {
-            node.fx = null;
-            node.fy = null;
-          } else {
-            node.fx = node.x;
-            node.fy = node.y;
-          }
+        onNodeRightClick={(node) => {
+          // Right-click to unfix node and let it move freely
+          node.fx = null;
+          node.fy = null;
         }}
         linkDirectionalArrowLength={6}
         linkDirectionalArrowRelPos={1}
