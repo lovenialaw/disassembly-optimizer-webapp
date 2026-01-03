@@ -104,17 +104,28 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
         }
 
         const key = child.uuid;
-        const stored = materialsRef.current.get(key);
+        let stored = materialsRef.current.get(key);
+        
+        // If we don't have stored material, store it now
+        if (!stored) {
+          const originalMaterial = child.material.clone();
+          materialsRef.current.set(key, {
+            original: originalMaterial,
+            mesh: child
+          });
+          stored = materialsRef.current.get(key);
+        }
         
         if (shouldHighlight) {
           // Highlight part with bright green emissive
           if (!child.userData.isHighlighted) {
             child.userData.isHighlighted = true;
-            child.material = stored.original.clone();
-            child.material.emissive = new THREE.Color(0x00ff00);
-            child.material.emissiveIntensity = 0.8;
-            // Make it slightly brighter overall
-            child.material.color.multiplyScalar(1.2);
+            const highlightMaterial = stored.original.clone();
+            highlightMaterial.emissive = new THREE.Color(0x00ff00);
+            highlightMaterial.emissiveIntensity = 0.8;
+            // Make it brighter
+            highlightMaterial.color.multiplyScalar(1.3);
+            child.material = highlightMaterial;
           }
         } else {
           // Reset to original material
