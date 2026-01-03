@@ -29,11 +29,12 @@ const ComponentPropertiesPanel = ({
         });
       }
     } else {
-      // For gearbox: safety risk for each component
+      // For gearbox: safety risk and tool for each component
       if (pathsData.components) {
         pathsData.components.forEach(comp => {
           initialProperties[comp] = {
-            safety_risk: 'Medium'
+            safety_risk: 'Medium',
+            disassembly_tool: 'Hand'
           };
         });
       }
@@ -136,7 +137,7 @@ const ComponentPropertiesPanel = ({
         ) : (
           // Gearbox: Component-based properties
           <div className="component-properties">
-            <h4>Component Safety Risk</h4>
+            <h4>Component Properties</h4>
             {pathsData.components && pathsData.components.map((comp, index) => {
               const compProps = properties[comp] || {};
               
@@ -155,6 +156,20 @@ const ComponentPropertiesPanel = ({
                         <option value="Low">Low</option>
                         <option value="Medium">Medium</option>
                         <option value="High">High</option>
+                      </select>
+                    </div>
+                    <div className="property-input">
+                      <label>Disassembly Tool</label>
+                      <select
+                        value={compProps.disassembly_tool || 'Hand'}
+                        onChange={(e) => handlePropertyChange(comp, 'disassembly_tool', e.target.value)}
+                      >
+                        <option value="Hand">Hand</option>
+                        <option value="Pull">Pull</option>
+                        <option value="Screwdriver">Screwdriver</option>
+                        <option value="Wrench">Wrench</option>
+                        <option value="Pliers">Pliers</option>
+                        <option value="Snap ring pliers">Snap ring pliers</option>
                       </select>
                     </div>
                   </div>

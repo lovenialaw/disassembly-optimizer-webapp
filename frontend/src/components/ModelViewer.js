@@ -149,7 +149,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   }, [scene, highlightedParts, metadata, optimizationResult, currentStep]);
 
   // Function to zoom camera to a specific mesh
-  const zoomToMesh = (mesh) => {
+  const zoomToMesh = useCallback((mesh) => {
     if (!mesh || !camera || !controlsRef.current) return;
     
     isZoomingRef.current = true;
@@ -203,7 +203,7 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     };
     
     animate();
-  }, [camera, isAnimating, currentStep]);
+  }, [isAnimating, currentStep]);
 
   // Function to reset camera to original position
   const resetCamera = useCallback(() => {

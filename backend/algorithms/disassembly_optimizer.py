@@ -396,8 +396,21 @@ class DisassemblyOptimizer:
             else:
                 safety = safety_val
 
-            # Get tool cost
-            tool = tool_cost(row.get('disassembly_tools', None))
+            # Get tool cost - use component_properties if available, otherwise use CSV or rule-based
+            tool = 1  # Default
+            if component_properties and v in component_properties:
+                comp_props = component_properties[v]
+                if isinstance(comp_props, dict) and 'disassembly_tool' in comp_props:
+                    # Use user-selected tool
+                    tool_str = str(comp_props['disassembly_tool']).lower()
+                    tool = tool_cost(tool_str)
+                elif isinstance(comp_props, dict) and 'tool' in comp_props:
+                    # Alternative key name
+                    tool_str = str(comp_props['tool']).lower()
+                    tool = tool_cost(tool_str)
+            else:
+                # Fallback to CSV data or rule-based
+                tool = tool_cost(row.get('disassembly_tools', None))
 
             # Get fastener cost
             fastener = fastener_count_cost(v)
