@@ -10,7 +10,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
     : `http://localhost:5000/api/products/${productId}/model`;
   
   // useGLTF must be called unconditionally (React hooks rule)
-  const { scene, error: gltfError } = useGLTF(modelUrl);
+  // It throws a promise that Suspense will catch for async loading
+  const { scene } = useGLTF(modelUrl);
   
   const groupRef = useRef();
   const controlsRef = useRef();
