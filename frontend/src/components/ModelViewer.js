@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations } from '@react-three/drei';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import './ModelViewer.css';
 
@@ -8,55 +8,133 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   const modelUrl = process.env.REACT_APP_API_URL 
     ? `${process.env.REACT_APP_API_URL}/products/${productId}/model`
     : `http://localhost:5000/api/products/${productId}/model`;
-  const { scene, animations } = useGLTF(modelUrl);
+  const { scene } = useGLTF(modelUrl);
   const groupRef = useRef();
   const [highlightedParts, setHighlightedParts] = useState(new Set());
+  const materialsRef = useRef(new Map());
 
+  // Store original materials on first load
   useEffect(() => {
-    if (optimizationResult && isAnimating && optimizationResult.animation_steps) {
-      const step = optimizationResult.animation_steps[currentStep];
-      if (step) {
-        // Highlight the part for current step
-        setHighlightedParts(new Set([step.part_id]));
-        
-        // Reset highlights after animation
-        const timer = setTimeout(() => {
-          if (currentStep === optimizationResult.animation_steps.length - 1) {
-            setHighlightedParts(new Set());
-          }
-        }, step.duration * 1000);
-        
-        return () => clearTimeout(timer);
+    if (!scene) return;
+    
+    scene.traverse((child) => {
+      if (child.isMesh && child.material) {
+        const key = child.uuid;
+        if (!materialsRef.current.has(key)) {
+          // Store original material
+          materialsRef.current.set(key, {
+            original: child.material.clone(),
+            mesh: child
+          });
+        }
       }
-    } else if (optimizationResult && !isAnimating) {
-      // Show all selected parts highlighted
-      setHighlightedParts(new Set(optimizationResult.sequence || []));
+    });
+  }, [scene]);
+
+  // Update highlighted parts based on animation state
+  useEffect(() => {
+    if (!optimizationResult) {
+      setHighlightedParts(new Set());
+      return;
+    }
+
+    if (isAnimating && optimizationResult.animation_steps && optimizationResult.animation_steps.length > 0) {
+      const step = optimizationResult.animation_steps[currentStep];
+      if (step && step.part_id) {
+        // Highlight the current part being disassembled
+        setHighlightedParts(new Set([step.part_id]));
+      } else {
+        setHighlightedParts(new Set());
+      }
+    } else if (!isAnimating && optimizationResult.sequence) {
+      // When not animating, show all parts in sequence
+      setHighlightedParts(new Set(optimizationResult.sequence));
     } else {
       setHighlightedParts(new Set());
     }
   }, [optimizationResult, isAnimating, currentStep]);
 
+  // Apply highlighting to meshes
   useEffect(() => {
     if (!scene || !metadata) return;
 
+    // Create a mapping from component names to possible mesh names
+    const componentNameMap = new Map();
+    if (metadata && metadata.components) {
+      metadata.components.forEach(comp => {
+        const compId = comp.id || comp.name || comp.component;
+        const compName = comp.name || comp.component || comp.id;
+        // Add variations of the name for matching
+        componentNameMap.set(compId.toLowerCase(), compName);
+        componentNameMap.set(compName.toLowerCase(), compName);
+        if (comp.component) {
+          componentNameMap.set(comp.component.toLowerCase(), comp.component);
+        }
+      });
+    }
+
     // Traverse scene and apply highlighting
     scene.traverse((child) => {
-      if (child.isMesh) {
-        const partName = child.name || child.userData.name;
-        if (highlightedParts.has(partName)) {
-          // Highlight part
-          child.material = child.material.clone();
-          child.material.emissive = new THREE.Color(0x00ff00);
-          child.material.emissiveIntensity = 0.5;
+      if (child.isMesh && child.material) {
+        const meshName = (child.name || '').toLowerCase().trim();
+        
+        // Check if this mesh should be highlighted
+        let shouldHighlight = false;
+        
+        if (highlightedParts.size > 0) {
+          // Try to match mesh name with highlighted parts
+          for (const highlightedPart of highlightedParts) {
+            const highlightedLower = String(highlightedPart).toLowerCase();
+            
+            // Direct name match
+            if (meshName === highlightedLower || meshName.includes(highlightedLower) || highlightedLower.includes(meshName)) {
+              shouldHighlight = true;
+              break;
+            }
+            
+            // Match via component mapping
+            if (componentNameMap.has(highlightedLower)) {
+              const mappedName = componentNameMap.get(highlightedLower).toLowerCase();
+              if (meshName === mappedName || meshName.includes(mappedName) || mappedName.includes(meshName)) {
+                shouldHighlight = true;
+                break;
+              }
+            }
+          }
+        }
+
+        const key = child.uuid;
+        const stored = materialsRef.current.get(key);
+        
+        if (shouldHighlight) {
+          // Highlight part with bright green emissive
+          if (!child.userData.isHighlighted) {
+            child.userData.isHighlighted = true;
+            child.material = stored.original.clone();
+            child.material.emissive = new THREE.Color(0x00ff00);
+            child.material.emissiveIntensity = 0.8;
+            // Make it slightly brighter overall
+            child.material.color.multiplyScalar(1.2);
+          }
         } else {
           // Reset to original material
-          if (child.userData.originalMaterial) {
-            child.material = child.userData.originalMaterial;
+          if (child.userData.isHighlighted && stored) {
+            child.userData.isHighlighted = false;
+            child.material = stored.original.clone();
           }
         }
       }
     });
-  }, [scene, highlightedParts, metadata]);
+  }, [scene, highlightedParts, metadata, optimizationResult, currentStep]);
+
+  // Debug logging
+  useEffect(() => {
+    if (highlightedParts.size > 0) {
+      console.log('Highlighting parts:', Array.from(highlightedParts));
+      console.log('Current step:', currentStep);
+      console.log('Is animating:', isAnimating);
+    }
+  }, [highlightedParts, currentStep, isAnimating]);
 
   return (
     <primitive 

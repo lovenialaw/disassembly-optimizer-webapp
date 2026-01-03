@@ -11,16 +11,18 @@ const AnimationControls = ({
   onStepChange
 }) => {
   useEffect(() => {
-    if (isAnimating && animationSteps.length > 0) {
+    if (isAnimating && animationSteps && animationSteps.length > 0) {
       const step = animationSteps[currentStep];
       if (step) {
+        const duration = (step.duration || 1.5) * 1000; // Default 1.5 seconds per step
         const timer = setTimeout(() => {
           if (currentStep < animationSteps.length - 1) {
             onStepChange(currentStep + 1);
           } else {
+            // Animation complete
             onPause();
           }
-        }, (step.duration || 1) * 1000);
+        }, duration);
         
         return () => clearTimeout(timer);
       }
