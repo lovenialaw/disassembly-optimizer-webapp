@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/disassembly-optimizer-webapp/static/css/main.57bc569b.css",
-    "main.js": "/disassembly-optimizer-webapp/static/js/main.482b039b.js",
+    "main.js": "/disassembly-optimizer-webapp/static/js/main.5eb200fa.js",
     "index.html": "/disassembly-optimizer-webapp/index.html",
     "main.57bc569b.css.map": "/disassembly-optimizer-webapp/static/css/main.57bc569b.css.map",
-    "main.482b039b.js.map": "/disassembly-optimizer-webapp/static/js/main.482b039b.js.map"
+    "main.5eb200fa.js.map": "/disassembly-optimizer-webapp/static/js/main.5eb200fa.js.map"
   },
   "entrypoints": [
     "static/css/main.57bc569b.css",
-    "static/js/main.482b039b.js"
+    "static/js/main.5eb200fa.js"
   ]
 }
