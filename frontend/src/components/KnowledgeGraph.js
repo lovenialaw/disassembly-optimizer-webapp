@@ -56,6 +56,9 @@ const KnowledgeGraph = ({ graphData, selectedParts, optimizationResult }) => {
         nodeColor={getNodeColor}
         nodeRelSize={0}
         nodeLabel={(node) => `${node.name || node.id}`}
+        enableNodeDrag={true}
+        enablePanInteraction={true}
+        enableZoomInteraction={true}
         nodeCanvasObject={(node, ctx, globalScale) => {
           // Safety check: ensure node has valid coordinates
           if (typeof node.x !== 'number' || typeof node.y !== 'number' || 
