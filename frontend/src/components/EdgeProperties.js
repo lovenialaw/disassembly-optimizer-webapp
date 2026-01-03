@@ -19,6 +19,7 @@ const EdgeProperties = ({ productId, edges, onPropertiesChange }) => {
     setEdgeProperties(initialProps);
     // Notify parent of initial values
     onPropertiesChange(initialProps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edges]);
 
   const handleChange = (edgeKey, key, value) => {

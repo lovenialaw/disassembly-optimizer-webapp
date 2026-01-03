@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import json
 import pandas as pd
+import networkx as nx
 from neo4j_client import Neo4jClient
 from algorithms.disassembly_optimizer import DisassemblyOptimizer
 
