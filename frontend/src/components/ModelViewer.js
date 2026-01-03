@@ -1,35 +1,25 @@
-import React, { useRef, useEffect, useState, useCallback, Suspense } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import './ModelViewer.css';
 
-function Model({ productId, metadata, optimizationResult, isAnimating, currentStep, onError }) {
+function Model({ productId, metadata, optimizationResult, isAnimating, currentStep }) {
   const modelUrl = process.env.REACT_APP_API_URL 
     ? `${process.env.REACT_APP_API_URL}/products/${productId}/model`
     : `http://localhost:5000/api/products/${productId}/model`;
   
   const [error, setError] = useState(null);
   
-  // useGLTF hook - this will throw if model fails to load
+  // useGLTF with error handling
   let scene = null;
   try {
     const gltfResult = useGLTF(modelUrl);
     scene = gltfResult.scene;
   } catch (err) {
-    console.error('Error loading 3D model:', err, 'URL:', modelUrl);
-    const errorMsg = err.message || 'Failed to load 3D model';
-    setError(errorMsg);
-    if (onError) {
-      onError(errorMsg);
-    }
+    console.error('Error loading GLTF model:', err);
+    setError(err.message || 'Failed to load 3D model');
   }
-  
-  useEffect(() => {
-    if (error && onError) {
-      onError(error);
-    }
-  }, [error, onError]);
   
   const groupRef = useRef();
   const controlsRef = useRef();
@@ -39,6 +29,13 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
   const highlightedMeshRef = useRef(null);
   const originalCameraPosition = useRef(new THREE.Vector3(5, 5, 5));
   const isZoomingRef = useRef(false);
+
+  useEffect(() => {
+    if (scene) {
+      setError(null);
+      console.log('Model loaded successfully:', productId);
+    }
+  }, [scene, productId]);
 
   // Store original materials on first load
   useEffect(() => {
@@ -270,6 +267,23 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
       resetCamera();
     }
   }, [isAnimating, currentStep, zoomToMesh, resetCamera]);
+
+  if (error || !scene) {
+    return (
+      <group>
+        <mesh>
+          <boxGeometry args={[2, 2, 2]} />
+          <meshStandardMaterial color={error ? "red" : "gray"} />
+        </mesh>
+        {error && (
+          <mesh position={[0, -1.5, 0]}>
+            <planeGeometry args={[4, 1]} />
+            <meshBasicMaterial color="black" transparent opacity={0.7} />
+          </mesh>
+        )}
+      </group>
+    );
+  }
 
   return (
     <>
