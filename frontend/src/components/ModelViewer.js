@@ -107,8 +107,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             }
 
             // Partial match (contains)
-            if (meshName && highlightedLower && 
-                (meshName.includes(highlightedLower) || highlightedLower.includes(meshName))) {
+            if (meshName && highlightedLower &&
+              (meshName.includes(highlightedLower) || highlightedLower.includes(meshName))) {
               shouldHighlight = true;
               matchReason = 'partial';
               break;
@@ -117,8 +117,8 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             // Match via component mapping
             if (componentNameMap.has(highlightedLower)) {
               const mappedName = componentNameMap.get(highlightedLower).toLowerCase().trim();
-              if (meshName === mappedName || 
-                  (meshName && mappedName && (meshName.includes(mappedName) || mappedName.includes(meshName)))) {
+              if (meshName === mappedName ||
+                (meshName && mappedName && (meshName.includes(mappedName) || mappedName.includes(meshName)))) {
                 shouldHighlight = true;
                 matchReason = 'mapped';
                 break;
@@ -128,10 +128,10 @@ function Model({ productId, metadata, optimizationResult, isAnimating, currentSt
             // Try matching without spaces/special characters
             const meshNameClean = meshName.replace(/[^a-z0-9]/g, '');
             const highlightedClean = highlightedLower.replace(/[^a-z0-9]/g, '');
-            if (meshNameClean && highlightedClean && 
-                (meshNameClean === highlightedClean || 
-                 meshNameClean.includes(highlightedClean) || 
-                 highlightedClean.includes(meshNameClean))) {
+            if (meshNameClean && highlightedClean &&
+              (meshNameClean === highlightedClean ||
+                meshNameClean.includes(highlightedClean) ||
+                highlightedClean.includes(meshNameClean))) {
               shouldHighlight = true;
               matchReason = 'cleaned';
               break;

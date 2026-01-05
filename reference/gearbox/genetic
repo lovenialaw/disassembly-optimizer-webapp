@@ -1,0 +1,141 @@
+import time
+import math
+import copy
+
+# =====================================================
+# 1. FITNESS FUNCTION
+# =====================================================
+
+def path_cost(path, G):
+    """Total disassembly complexity of a path"""
+    cost = 0
+    for i in range(len(path) - 1):
+        if not G.has_edge(path[i], path[i + 1]):
+            return float("inf")
+        cost += G[path[i]][path[i + 1]]["weight"]
+    return cost
+
+
+def fitness(path, G):
+    """Higher fitness = lower disassembly complexity"""
+    return 1 / (1 + path_cost(path, G))
+
+
+# =====================================================
+# 2. DEFAULT GA PARAMETERS (FIXED)
+# =====================================================
+
+retain = 0.5
+mutation_rate = 0.2
+generations = 30
+
+
+# =====================================================
+# 3. POPULATION SIZE (GEARBOX-SAFE)
+# =====================================================
+
+avg_path_length = int(sum(len(p) for p in all_paths) / len(all_paths))
+theoretical_population = math.factorial(avg_path_length)
+
+# ⚠️ CAP population size for gearbox scalability
+MAX_POPULATION = 100
+
+population_size = min(theoretical_population, MAX_POPULATION)
+population_size = max(2, population_size)
+
+print("=== GA PARAMETERS (GEARBOX) ===")
+print(f"Average components per path: {avg_path_length}")
+print(f"Theoretical population size: {avg_path_length}! = {theoretical_population}")
+print(f"Capped population size: {population_size}")
+print(f"Retain rate: {retain}")
+print(f"Mutation rate: {mutation_rate}")
+print(f"Generations: {generations}")
+
+
+# =====================================================
+# 4. INITIAL POPULATION (DETERMINISTIC)
+# =====================================================
+
+population = []
+for path in all_paths:
+    population.append(path)
+    if len(population) >= population_size:
+        break
+
+idx = 0
+while len(population) < population_size:
+    population.append(all_paths[idx % len(all_paths)])
+    idx += 1
+
+
+best_overall = None
+best_cost = float("inf")
+
+
+# =====================================================
+# 5. SELECTION (ELITIST, DETERMINISTIC)
+# =====================================================
+
+def select_population(population, G, retain):
+    population = sorted(population, key=lambda p: path_cost(p, G))
+    retain_length = max(1, int(len(population) * retain))
+    return population[:retain_length]
+
+
+# =====================================================
+# 6. MUTATION (DETERMINISTIC PATH REPLACEMENT)
+# =====================================================
+
+def mutate_population(population, all_paths, mutation_rate, generation):
+    if mutation_rate <= 0:
+        return population
+
+    mutation_interval = max(1, int(1 / mutation_rate))
+    new_population = copy.deepcopy(population)
+
+    if generation % mutation_interval == 0:
+        for i in range(len(new_population)):
+            new_population[i] = all_paths[(generation + i) % len(all_paths)]
+
+    return new_population
+
+
+# =====================================================
+# 7. GA MAIN LOOP
+# =====================================================
+
+start_time = time.time()
+
+print("\n=== GA EVOLUTION STARTED ===")
+
+for gen in range(generations):
+
+    population = select_population(population, G, retain)
+
+    population = mutate_population(
+        population, all_paths, mutation_rate, gen
+    )
+
+    for path in population:
+        cost = path_cost(path, G)
+        if cost < best_cost:
+            best_cost = cost
+            best_overall = path
+
+
+# =====================================================
+# 8. RESULTS
+# =====================================================
+
+elapsed_time = time.time() - start_time
+
+print("\n🧬 GENETIC ALGORITHM RESULT (GEARBOX)")
+print("Best disassembly sequence:")
+
+for i, step in enumerate(best_overall, 1):
+    print(f"  {i}. {step}")
+
+print(f"\nTotal disassembly complexity: {best_cost:.2f}")
+print(f"Generations: {generations}")
+print(f"Execution time: {elapsed_time:.2f} seconds")
+print("(Lower score = easier and safer disassembly)")
